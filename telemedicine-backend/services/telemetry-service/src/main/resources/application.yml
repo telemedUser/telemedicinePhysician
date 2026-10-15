@@ -1,0 +1,52 @@
+server:
+  port: 8104
+
+spring:
+  profiles:
+    active: dev
+  application:
+    name: telemetry-service
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:telemetry}
+    username: ${DB_USER:telemedicine}
+    password: ${DB_PASSWORD:telemedicine}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration,classpath:db/migration/common
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+
+telemedicine:
+  events:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+  integration:
+    config-service-base-url: ${CONFIG_SERVICE_URL:http://config-service:8112}
+    simulator:
+      base-url: ${SIMULATOR_BASE_URL:http://external-simulators:8090}
+  security:
+    consent:
+      http-verifier-enabled: true
+      waiting-room-url: ${WAITING_ROOM_URL:http://waiting-room-service:8101}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs

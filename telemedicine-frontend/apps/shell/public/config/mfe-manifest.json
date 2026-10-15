@@ -1,0 +1,65 @@
+{
+  "shellVersion": "1.0.0",
+  "remotes": [
+    {
+      "name": "mfePatientConsent",
+      "url": "http://localhost:3002/assets/remoteEntry.js",
+      "route": "/patient/consent",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["PATIENT"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    },
+    {
+      "name": "mfePatientIdentity",
+      "url": "http://localhost:3003/assets/remoteEntry.js",
+      "route": "/patient/identity",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["PATIENT"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    },
+    {
+      "name": "mfePatientWaitingRoom",
+      "url": "http://localhost:3004/assets/remoteEntry.js",
+      "route": "/patient/waiting-room",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["PATIENT"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    },
+    {
+      "name": "mfePatientConsultation",
+      "url": "http://localhost:3005/assets/remoteEntry.js",
+      "route": "/patient/consultation",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["PATIENT"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    },
+    {
+      "name": "mfePatientDocuments",
+      "url": "http://localhost:3006/assets/remoteEntry.js",
+      "route": "/patient/documents",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["PATIENT"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    },
+    {
+      "name": "mfePatientSurvey",
+      "url": "http://localhost:3007/assets/remoteEntry.js",
+      "route": "/patient/survey",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["PATIENT"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    }
+  ]
+}

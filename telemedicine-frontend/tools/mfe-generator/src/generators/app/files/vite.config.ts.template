@@ -1,0 +1,51 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { federation } from '@module-federation/vite';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import { resolve } from 'path';
+
+export default defineConfig({
+  root: __dirname,
+  cacheDir: '../../node_modules/.vite/<%= projectName %>',
+  plugins: [
+    react(),
+    nxViteTsPaths(),
+    federation({
+      name: '<%= federationName %>',
+      filename: 'remoteEntry.js',
+      exposes: {
+        './App': './src/App.tsx',
+      },
+      shared: {
+        react: { singleton: true },
+        'react-dom': { singleton: true },
+      },
+    }),
+  ],
+  server: {
+    port: <%= port %>,
+    strictPort: true,
+    origin: 'http://localhost:<%= port %>',
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    port: <%= port %>,
+    strictPort: true,
+  },
+  build: {
+    outDir: '../../dist/apps/<%= projectName %>',
+    emptyOutDir: true,
+    target: 'esnext',
+  },
+  resolve: {
+    alias: {
+      '@telemedicine/shared-types': resolve(__dirname, '../../packages/shared-types/src/index.ts'),
+      '@telemedicine/shared-ui': resolve(__dirname, '../../packages/shared-ui/src/index.tsx'),
+    },
+  },
+});

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/AppointmentCreated/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "patientRef",
+    "physicianRef",
+    "scheduledAt",
+    "modality",
+    "sourceSystem"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "patientRef": {
+      "type": "string"
+    },
+    "physicianRef": {
+      "type": "string"
+    },
+    "scheduledAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "modality": {
+      "type": "string"
+    },
+    "sourceSystem": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

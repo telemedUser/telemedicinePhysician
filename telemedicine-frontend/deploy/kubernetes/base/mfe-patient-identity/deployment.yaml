@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-patient-identity
+  namespace: telemedicine-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mfe-patient-identity
+  template:
+    metadata:
+      labels:
+        app: mfe-patient-identity
+    spec:
+      containers:
+        - name: mfe-patient-identity
+          image: telemedicine/mfe-patient-identity:0.1.0
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfe-patient-identity
+  namespace: telemedicine-frontend
+spec:
+  selector:
+    app: mfe-patient-identity
+  ports:
+    - port: 80
+      targetPort: 80

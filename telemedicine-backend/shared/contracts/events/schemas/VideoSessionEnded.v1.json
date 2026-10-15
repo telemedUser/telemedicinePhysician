@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/VideoSessionEnded/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "sessionId",
+    "provider",
+    "durationSeconds",
+    "endReason",
+    "endedAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "durationSeconds": {
+      "type": "integer"
+    },
+    "endReason": {
+      "type": "string"
+    },
+    "endedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

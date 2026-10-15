@@ -1,0 +1,52 @@
+server:
+  port: 8106
+
+spring:
+  profiles:
+    active: dev
+  application:
+    name: notification-service
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:notification}
+    username: ${DB_USER:notification}
+    password: ${DB_PASSWORD:change-me-locally}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration,classpath:db/migration/common
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+
+telemedicine:
+  events:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+  integration:
+    config-service-base-url: ${CONFIG_SERVICE_URL:http://config-service:8112}
+  notification:
+    default-locale: es
+    reminder-window-hours: 24
+    integration-service-base-url: ${INTEGRATION_SERVICE_URL:http://integration-service:8107}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

@@ -1,0 +1,51 @@
+server:
+  port: 8113
+
+spring:
+  profiles:
+    active: dev
+  application:
+    name: scheduler-service
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:scheduler}
+    username: ${DB_USER:scheduler}
+    password: ${DB_PASSWORD:scheduler}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: always
+    properties:
+      org.quartz.scheduler.instanceName: scheduler-service
+      org.quartz.scheduler.instanceId: AUTO
+      org.quartz.jobStore.isClustered: true
+      org.quartz.jobStore.clusterCheckinInterval: 15000
+      org.quartz.jobStore.tablePrefix: QRTZ_
+      org.quartz.threadPool.threadCount: 5
+
+telemedicine:
+  scheduler:
+    downstream-timeout: 10s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

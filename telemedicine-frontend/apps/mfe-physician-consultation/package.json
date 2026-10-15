@@ -1,0 +1,18 @@
+{
+  "name": "mfe-physician-consultation",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@telemedicine/api-client": "workspace:*",
+    "@telemedicine/chat-adapter": "workspace:*",
+    "@telemedicine/design-system": "workspace:*",
+    "@telemedicine/feature-flags": "workspace:*",
+    "@telemedicine/i18n": "workspace:*",
+    "@telemedicine/shared-types": "workspace:*",
+    "@telemedicine/telemetry-adapter": "workspace:*",
+    "@telemedicine/video-adapter": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  }
+}

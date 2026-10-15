@@ -1,0 +1,54 @@
+openapi: 3.1.0
+info:
+  title: Scheduler Service API
+  version: 1.0.0
+paths:
+  /api/v1/scheduler/jobs:
+    get:
+      summary: List scheduled jobs
+      responses:
+        '200':
+          description: Job catalog
+  /api/v1/scheduler/jobs/{key}:
+    patch:
+      summary: Update job cron or enabled flag (admin)
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated job
+  /api/v1/scheduler/runs:
+    get:
+      summary: Paginated job run history
+      parameters:
+        - name: jobKey
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: size
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Run history page
+  /api/v1/scheduler/jobs/{key}/trigger:
+    post:
+      summary: Manually trigger a job (admin)
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trigger accepted

@@ -1,0 +1,6 @@
+{
+  "name": "@telemedicine/tsconfig-presets",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./index.json"
+}

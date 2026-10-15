@@ -1,0 +1,9 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+dependencies {
+    implementation "com.diffplug.spotless:spotless-plugin-gradle:${libs.versions.spotless.get()}"
+    implementation "me.champeau.gradle:japicmp-gradle-plugin:${libs.versions.japicmp.get()}"
+    implementation "io.spring.gradle:dependency-management-plugin:${libs.versions.springDependencyManagement.get()}"
+}

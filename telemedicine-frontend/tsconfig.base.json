@@ -1,0 +1,82 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "importHelpers": true,
+    "isolatedModules": true,
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@telemedicine/mfe-registry": [
+        "packages/mfe-registry/src/index.ts"
+      ],
+      "@telemedicine/shared-types": [
+        "packages/shared-types/src/index.ts"
+      ],
+      "@telemedicine/shared-ui": [
+        "packages/shared-ui/src/index.tsx"
+      ],
+      "@telemedicine/api-client": [
+        "packages/api-client/src/index.tsx"
+      ],
+      "@telemedicine/auth": [
+        "packages/auth/src/index.tsx"
+      ],
+      "@telemedicine/session-context": [
+        "packages/session-context/src/index.tsx"
+      ],
+      "@telemedicine/video-adapter": [
+        "packages/video-adapter/src/index.ts"
+      ],
+      "@telemedicine/chat-adapter": [
+        "packages/chat-adapter/src/index.ts"
+      ],
+      "@telemedicine/telemetry-adapter": [
+        "packages/telemetry-adapter/src/index.ts"
+      ],
+      "@telemedicine/consent-kit": [
+        "packages/consent-kit/src/index.tsx"
+      ],
+      "@telemedicine/device-test": [
+        "packages/device-test/src/index.ts"
+      ],
+      "@telemedicine/i18n": [
+        "packages/i18n/src/index.ts"
+      ],
+      "@telemedicine/feature-flags": [
+        "packages/feature-flags/src/index.tsx"
+      ],
+      "@telemedicine/observability-web": [
+        "packages/observability-web/src/index.tsx"
+      ],
+      "@telemedicine/design-system": [
+        "packages/design-system/src/index.tsx"
+      ],
+      "@telemedicine/test-utils": [
+        "packages/test-utils/src/index.ts"
+      ],
+      "@telemedicine/eslint-config": [
+        "packages/eslint-config/index.js"
+      ],
+      "@telemedicine/tsconfig-presets": [
+        "packages/tsconfig-presets/index.json"
+      ]
+    }
+  }
+}

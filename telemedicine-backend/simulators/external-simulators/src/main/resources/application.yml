@@ -1,0 +1,46 @@
+server:
+  port: 8200
+
+spring:
+  application:
+    name: external-simulators
+  profiles:
+    active: dev
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+        tags: metrics-path=/actuator/prometheus
+
+telemedicine:
+  simulator:
+    vendors:
+      his: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+      sap: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+      payment: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+      fonasa: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+      vonage: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+      acs: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+      mpi: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+      medipass: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+      notify: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+      anura: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+      recmed: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+      zendesk: { latencyMs: 0, latencyJitterMs: 0, errorRate: 0.0, timeoutRate: 0.0, scenario: success, enabled: true }
+
+springdoc:
+  api-docs:
+    path: /sim/v3/api-docs
+  swagger-ui:
+    path: /sim/swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

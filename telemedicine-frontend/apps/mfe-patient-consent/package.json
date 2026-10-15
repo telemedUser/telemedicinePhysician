@@ -1,0 +1,17 @@
+{
+  "name": "mfe-patient-consent",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@telemedicine/api-client": "workspace:*",
+    "@telemedicine/consent-kit": "workspace:*",
+    "@telemedicine/design-system": "workspace:*",
+    "@telemedicine/i18n": "workspace:*",
+    "@telemedicine/session-context": "workspace:*",
+    "@telemedicine/shared-types": "workspace:*",
+    "@telemedicine/test-utils": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  }
+}

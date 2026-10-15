@@ -1,0 +1,57 @@
+server:
+  port: 8102
+
+spring:
+  profiles:
+    active: dev
+  application:
+    name: identity-service
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:identity}
+    username: ${DB_USER:identity}
+    password: ${DB_PASSWORD:change-me-locally}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration,classpath:db/migration/common
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+
+telemedicine:
+  events:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+  security:
+    consent:
+      http-verifier-enabled: true
+      waiting-room-url: ${WAITING_ROOM_URL:http://waiting-room-service:8101}
+  identity:
+    max-attempts: 3
+    lockout-duration: PT15M
+    integration-service-base-url: ${INTEGRATION_SERVICE_URL:http://integration-service:8107}
+  persistence:
+    phi-encryption:
+      key: ${TELEMEDICINE_PHI_KEY:v1:dGVzdC1pZGVudGl0eS1waGkta2V5MTIzNDU2Nzg=}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

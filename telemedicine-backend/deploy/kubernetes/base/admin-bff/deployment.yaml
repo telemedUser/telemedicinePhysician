@@ -1,0 +1,48 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-bff
+  namespace: telemedicine-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-bff
+  template:
+    metadata:
+      labels:
+        app: admin-bff
+    spec:
+      containers:
+        - name: admin-bff
+          image: telemedicine/admin-bff:0.1.0
+          ports:
+            - containerPort: 8092
+          envFrom:
+            - configMapRef:
+                name: telemedicine-backend-config
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8092
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8092
+            initialDelaySeconds: 60
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-bff
+  namespace: telemedicine-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: admin-bff
+  ports:
+    - port: 8092
+      targetPort: 8092

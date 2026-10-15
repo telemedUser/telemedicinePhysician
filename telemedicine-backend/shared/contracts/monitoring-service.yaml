@@ -1,0 +1,17 @@
+openapi: 3.1.0
+info:
+  title: Monitoring Service API
+  version: 1.0.0
+paths:
+  /api/v1/monitoring/snapshot:
+    get:
+      summary: Live operational snapshot for BFF aggregation
+      responses:
+        '200':
+          description: Snapshot with activeSessions, waitingRoomQueue, errorRate
+  /api/v1/monitoring/quality:
+    post:
+      summary: Record a video connection quality sample
+      responses:
+        '200':
+          description: Sample recorded

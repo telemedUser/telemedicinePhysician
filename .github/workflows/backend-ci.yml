@@ -1,0 +1,172 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicine-backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'telemedicine-backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Gradle test + 80% JaCoCo gate
+        working-directory: telemedicine-backend
+        run: |
+          chmod +x gradlew
+          ./gradlew check jacocoTestReport --no-daemon
+      - name: Upload JaCoCo report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-backend
+          path: telemedicine-backend/**/build/reports/jacoco/
+
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      gateway: ${{ steps.filter.outputs.gateway }}
+      config-service: ${{ steps.filter.outputs.config-service }}
+      audit-service: ${{ steps.filter.outputs.audit-service }}
+      scheduler-service: ${{ steps.filter.outputs.scheduler-service }}
+      patient-bff: ${{ steps.filter.outputs.patient-bff }}
+      physician-bff: ${{ steps.filter.outputs.physician-bff }}
+      admin-bff: ${{ steps.filter.outputs.admin-bff }}
+      waiting-room-service: ${{ steps.filter.outputs.waiting-room-service }}
+      identity-service: ${{ steps.filter.outputs.identity-service }}
+      video-service: ${{ steps.filter.outputs.video-service }}
+      telemetry-service: ${{ steps.filter.outputs.telemetry-service }}
+      clinical-docs-service: ${{ steps.filter.outputs.clinical-docs-service }}
+      notification-service: ${{ steps.filter.outputs.notification-service }}
+      integration-service: ${{ steps.filter.outputs.integration-service }}
+      survey-service: ${{ steps.filter.outputs.survey-service }}
+      reporting-service: ${{ steps.filter.outputs.reporting-service }}
+      monitoring-service: ${{ steps.filter.outputs.monitoring-service }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            gateway:
+              - 'telemedicine-backend/gateway/**'
+            config-service:
+              - 'telemedicine-backend/platform/config-service/**'
+            audit-service:
+              - 'telemedicine-backend/platform/audit-service/**'
+            scheduler-service:
+              - 'telemedicine-backend/platform/scheduler-service/**'
+            patient-bff:
+              - 'telemedicine-backend/bff/patient-bff/**'
+            physician-bff:
+              - 'telemedicine-backend/bff/physician-bff/**'
+            admin-bff:
+              - 'telemedicine-backend/bff/admin-bff/**'
+            waiting-room-service:
+              - 'telemedicine-backend/services/waiting-room-service/**'
+            identity-service:
+              - 'telemedicine-backend/services/identity-service/**'
+            video-service:
+              - 'telemedicine-backend/services/video-service/**'
+            telemetry-service:
+              - 'telemedicine-backend/services/telemetry-service/**'
+            clinical-docs-service:
+              - 'telemedicine-backend/services/clinical-docs-service/**'
+            notification-service:
+              - 'telemedicine-backend/services/notification-service/**'
+            integration-service:
+              - 'telemedicine-backend/services/integration-service/**'
+            survey-service:
+              - 'telemedicine-backend/services/survey-service/**'
+            reporting-service:
+              - 'telemedicine-backend/services/reporting-service/**'
+            monitoring-service:
+              - 'telemedicine-backend/services/monitoring-service/**'
+            shared:
+              - 'telemedicine-backend/shared/**'
+              - 'telemedicine-backend/build-logic/**'
+              - 'telemedicine-backend/build.gradle'
+              - 'telemedicine-backend/settings.gradle'
+
+  build-images:
+    needs: [test-and-coverage, detect-changes]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: gateway
+            dockerfile: telemedicine-backend/gateway/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.gateway == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: config-service
+            dockerfile: telemedicine-backend/platform/config-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.config-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: audit-service
+            dockerfile: telemedicine-backend/platform/audit-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.audit-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: scheduler-service
+            dockerfile: telemedicine-backend/platform/scheduler-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.scheduler-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: patient-bff
+            dockerfile: telemedicine-backend/bff/patient-bff/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.patient-bff == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: physician-bff
+            dockerfile: telemedicine-backend/bff/physician-bff/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.physician-bff == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: admin-bff
+            dockerfile: telemedicine-backend/bff/admin-bff/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.admin-bff == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: waiting-room-service
+            dockerfile: telemedicine-backend/services/waiting-room-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.waiting-room-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: identity-service
+            dockerfile: telemedicine-backend/services/identity-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.identity-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: video-service
+            dockerfile: telemedicine-backend/services/video-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.video-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: telemetry-service
+            dockerfile: telemedicine-backend/services/telemetry-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.telemetry-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: clinical-docs-service
+            dockerfile: telemedicine-backend/services/clinical-docs-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.clinical-docs-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: notification-service
+            dockerfile: telemedicine-backend/services/notification-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.notification-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: integration-service
+            dockerfile: telemedicine-backend/services/integration-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.integration-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: survey-service
+            dockerfile: telemedicine-backend/services/survey-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.survey-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: reporting-service
+            dockerfile: telemedicine-backend/services/reporting-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.reporting-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+          - service: monitoring-service
+            dockerfile: telemedicine-backend/services/monitoring-service/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.monitoring-service == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.service }}
+        if: matrix.changed == true
+        run: |
+          docker build -f ${{ matrix.dockerfile }} \
+            -t telemedicine/${{ matrix.service }}:${{ github.sha }} \
+            telemedicine-backend

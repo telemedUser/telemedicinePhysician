@@ -1,0 +1,108 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../
+
+replicas:
+  - name: gateway
+    count: 3
+  - name: patient-bff
+    count: 3
+  - name: physician-bff
+    count: 3
+  - name: admin-bff
+    count: 3
+  - name: waiting-room-service
+    count: 3
+  - name: identity-service
+    count: 3
+  - name: video-service
+    count: 3
+  - name: integration-service
+    count: 3
+  - name: clinical-docs-service
+    count: 3
+  - name: notification-service
+    count: 3
+  - name: shell
+    count: 3
+  - name: physician-shell
+    count: 3
+  - name: admin-shell
+    count: 3
+
+images:
+  - name: telemedicine/gateway
+    newTag: prod
+  - name: telemedicine/patient-bff
+    newTag: prod
+  - name: telemedicine/physician-bff
+    newTag: prod
+  - name: telemedicine/admin-bff
+    newTag: prod
+  - name: telemedicine/waiting-room-service
+    newTag: prod
+  - name: telemedicine/identity-service
+    newTag: prod
+  - name: telemedicine/video-service
+    newTag: prod
+  - name: telemedicine/telemetry-service
+    newTag: prod
+  - name: telemedicine/clinical-docs-service
+    newTag: prod
+  - name: telemedicine/notification-service
+    newTag: prod
+  - name: telemedicine/integration-service
+    newTag: prod
+  - name: telemedicine/survey-service
+    newTag: prod
+  - name: telemedicine/reporting-service
+    newTag: prod
+  - name: telemedicine/monitoring-service
+    newTag: prod
+  - name: telemedicine/config-service
+    newTag: prod
+  - name: telemedicine/audit-service
+    newTag: prod
+  - name: telemedicine/scheduler-service
+    newTag: prod
+  - name: telemedicine/shell
+    newTag: prod
+  - name: telemedicine/physician-shell
+    newTag: prod
+  - name: telemedicine/admin-shell
+    newTag: prod
+  - name: telemedicine/mfe-patient-consent
+    newTag: prod
+  - name: telemedicine/mfe-patient-identity
+    newTag: prod
+  - name: telemedicine/mfe-patient-waiting-room
+    newTag: prod
+  - name: telemedicine/mfe-patient-consultation
+    newTag: prod
+  - name: telemedicine/mfe-patient-documents
+    newTag: prod
+  - name: telemedicine/mfe-patient-survey
+    newTag: prod
+  - name: telemedicine/mfe-physician-consultation
+    newTag: prod
+  - name: telemedicine/mfe-physician-documentation
+    newTag: prod
+  - name: telemedicine/mfe-physician-patient-context
+    newTag: prod
+  - name: telemedicine/mfe-admin-config
+    newTag: prod
+  - name: telemedicine/mfe-admin-dashboards
+    newTag: prod
+  - name: telemedicine/mfe-admin-audit
+    newTag: prod
+  - name: telemedicine/mfe-admin-access
+    newTag: prod
+  - name: telemedicine/mfe-admin-monitoring
+    newTag: prod
+
+patches:
+  - path: patches/env-config.yaml
+  - path: patches/ingress-hosts.yaml
+  - path: patches/canary-weight.yaml

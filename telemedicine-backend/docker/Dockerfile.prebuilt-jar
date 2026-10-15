@@ -1,0 +1,8 @@
+# Runtime image for a Spring Boot fat JAR produced outside Docker (faster than
+# recompiling each module with Dockerfile.spring-service).
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+RUN apk add --no-cache wget
+COPY app.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]

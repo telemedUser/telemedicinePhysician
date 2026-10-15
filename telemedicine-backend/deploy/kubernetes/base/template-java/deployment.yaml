@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: template-java
+  namespace: telemedicine-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: template-java
+  template:
+    metadata:
+      labels:
+        app: template-java
+    spec:
+      containers:
+        - name: template-java
+          image: telemedicine/template-java:0.1.0
+          env:
+            - name: CONSUL_HOST
+              value: consul
+            - name: CONSUL_PORT
+              value: "8500"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: template-java
+  namespace: telemedicine-backend
+spec:
+  selector:
+    app: template-java
+  ports:
+    - port: 8081
+      targetPort: 8081

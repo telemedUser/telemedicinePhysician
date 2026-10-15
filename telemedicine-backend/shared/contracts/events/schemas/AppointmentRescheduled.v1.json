@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/AppointmentRescheduled/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "previousScheduledAt",
+    "scheduledAt",
+    "reasonCode"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "previousScheduledAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scheduledAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reasonCode": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

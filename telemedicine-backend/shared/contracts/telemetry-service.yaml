@@ -1,0 +1,11 @@
+openapi: 3.1.0
+info:
+  title: Telemetry Service API
+  version: 1.0.0
+paths:
+  /api/v1/telemetry/token:
+    post:
+      summary: Request an ANURA measurement token
+  /api/v1/telemetry/results:
+    post:
+      summary: Submit encrypted ANURA results and persist measurements

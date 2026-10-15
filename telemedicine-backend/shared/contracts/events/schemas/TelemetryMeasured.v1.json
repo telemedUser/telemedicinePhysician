@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/TelemetryMeasured/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "sessionId",
+    "measurementId",
+    "metricType",
+    "provider",
+    "measuredAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "measurementId": {
+      "type": "string"
+    },
+    "metricType": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "measuredAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

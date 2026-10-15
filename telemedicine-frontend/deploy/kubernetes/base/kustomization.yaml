@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: telemedicine-frontend
+resources:
+  - namespace.yaml
+  - shell/deployment.yaml
+  - template-mfe/deployment.yaml
+  - physician-shell/deployment.yaml
+  - admin-shell/deployment.yaml
+  - mfe-patient-consent/deployment.yaml
+  - mfe-patient-identity/deployment.yaml
+  - mfe-patient-waiting-room/deployment.yaml
+  - mfe-patient-consultation/deployment.yaml
+  - mfe-patient-documents/deployment.yaml
+  - mfe-patient-survey/deployment.yaml
+  - mfe-physician-consultation/deployment.yaml
+  - mfe-physician-documentation/deployment.yaml
+  - mfe-physician-patient-context/deployment.yaml
+  - mfe-admin-config/deployment.yaml
+  - mfe-admin-dashboards/deployment.yaml
+  - mfe-admin-audit/deployment.yaml
+  - mfe-admin-access/deployment.yaml
+  - mfe-admin-monitoring/deployment.yaml

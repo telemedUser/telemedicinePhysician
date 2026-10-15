@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-admin-audit
+  namespace: telemedicine-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mfe-admin-audit
+  template:
+    metadata:
+      labels:
+        app: mfe-admin-audit
+    spec:
+      containers:
+        - name: mfe-admin-audit
+          image: telemedicine/mfe-admin-audit:0.1.0
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfe-admin-audit
+  namespace: telemedicine-frontend
+spec:
+  selector:
+    app: mfe-admin-audit
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,25 @@
+plugins {
+    id 'telemedicine.java-library-conventions'
+    id 'telemedicine.quality-conventions'
+    id 'telemedicine.spring-library-conventions'
+    id 'telemedicine.publishing-conventions'
+}
+
+description = 'Servlet web defaults: RFC 9457 exception handling, pagination, idempotency and OpenAPI conventions.'
+
+dependencies {
+    api project(':java-common-core')
+    api 'org.springframework.boot:spring-boot-starter-web'
+    api 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Spring's DAO exception hierarchy lives in spring-tx. Services that use persistence get it
+    // transitively; the handler that needs it is conditional so web itself stays storage-agnostic.
+    compileOnly 'org.springframework:spring-tx'
+
+    // springdoc is opt-in: only services that expose an OpenAPI document need it on the runtime
+    // classpath, but the customizer must compile here.
+    compileOnly libs.springdoc.openapi.starter.webmvc.ui
+
+    testImplementation 'org.springframework:spring-tx'
+    testImplementation libs.springdoc.openapi.starter.webmvc.ui
+}

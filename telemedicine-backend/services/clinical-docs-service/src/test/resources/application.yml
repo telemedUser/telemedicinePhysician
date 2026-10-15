@@ -1,0 +1,34 @@
+spring:
+  cloud:
+    consul:
+      discovery:
+        enabled: false
+  datasource:
+    url: jdbc:h2:mem:clinicaldocs;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration,classpath:db/migration/common
+  kafka:
+    listener:
+      auto-startup: false
+
+telemedicine:
+  security:
+    mode: dev
+  integration:
+    config-service-base-url: http://localhost:${wiremock.server.port:8080}
+    simulator:
+      base-url: http://localhost:${wiremock.server.port:8080}
+  persistence:
+    phi-encryption-key: dGVzdC1rZXktMzJieXRzLWxvbmctZW5vdWdoMTIzNDU2Nzg=
+  minio:
+    endpoint: http://localhost:9000
+    access-key: minio
+    secret-key: minio123
+  clinical-docs:
+    public-base-url: http://localhost:8105

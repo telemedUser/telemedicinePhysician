@@ -1,0 +1,48 @@
+:root,
+[data-theme='patient'] {
+  --tm-color-primary: #0066cc;
+  --tm-color-primary-hover: #0052a3;
+  --tm-color-secondary: #6b7280;
+  --tm-color-success: #059669;
+  --tm-color-warning: #d97706;
+  --tm-color-danger: #dc2626;
+  --tm-color-info: #0284c7;
+  --tm-color-bg: #ffffff;
+  --tm-color-bg-muted: #f9fafb;
+  --tm-color-text: #111827;
+  --tm-color-text-muted: #6b7280;
+  --tm-color-border: #e5e7eb;
+  --tm-radius-sm: 4px;
+  --tm-radius-md: 8px;
+  --tm-radius-lg: 12px;
+  --tm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --tm-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --tm-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --tm-spacing-xs: 4px;
+  --tm-spacing-sm: 8px;
+  --tm-spacing-md: 16px;
+  --tm-spacing-lg: 24px;
+  --tm-spacing-xl: 32px;
+}
+
+[data-theme='clinical'] {
+  --tm-color-primary: #1e3a5f;
+  --tm-color-primary-hover: #152a45;
+  --tm-color-secondary: #475569;
+  --tm-color-bg: #f8fafc;
+  --tm-color-bg-muted: #f1f5f9;
+  --tm-color-text: #0f172a;
+  --tm-color-border: #cbd5e1;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--tm-font-family);
+  color: var(--tm-color-text);
+  background: var(--tm-color-bg);
+}

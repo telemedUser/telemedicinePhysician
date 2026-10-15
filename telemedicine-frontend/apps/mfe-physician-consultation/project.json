@@ -1,0 +1,43 @@
+{
+  "name": "mfe-physician-consultation",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/mfe-physician-consultation/src",
+  "projectType": "application",
+  "tags": [
+    "scope:app",
+    "type:mfe"
+  ],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/mfe-physician-consultation"
+      ],
+      "options": {
+        "command": "vite build",
+        "cwd": "apps/mfe-physician-consultation"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite",
+        "cwd": "apps/mfe-physician-consultation"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite preview",
+        "cwd": "apps/mfe-physician-consultation"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run",
+        "cwd": "apps/mfe-physician-consultation"
+      }
+    }
+  }
+}

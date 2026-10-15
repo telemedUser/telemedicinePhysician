@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+  title: Waiting Room Service API
+  version: 1.0.0
+paths:
+  /api/v1/waiting-room/consent/platform:
+    post:
+      summary: Record platform consent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentGrantRequest'
+      responses:
+        '200':
+          description: Platform consent granted
+  /api/v1/waiting-room/consent/clinical:
+    post:
+      summary: Record clinical informed consent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentGrantRequest'
+      responses:
+        '200':
+          description: Clinical consent granted
+  /api/v1/waiting-room/consent/withdraw:
+    post:
+      summary: Withdraw consent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentWithdrawRequest'
+      responses:
+        '200':
+          description: Consent withdrawn
+  /api/v1/waiting-room/consent/{subjectId}:
+    get:
+      summary: Verify consent for HttpConsentVerifier
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [PLATFORM_TERMS, CLINICAL_INFORMED]
+        - name: version
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Consent decision
+  /api/v1/waiting-room/session-link:
+    post:
+      summary: Generate secure session link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionLinkRequest'
+      responses:
+        '200':
+          description: Signed link generated
+  /api/v1/waiting-room/device-test/{appointmentId}:
+    post:
+      summary: Submit device test results
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceTestRequest'
+      responses:
+        '200':
+          description: Device test completed
+  /api/v1/waiting-room/queue/{appointmentId}:
+    get:
+      summary: Queue position
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Queue position and estimated wait
+  /api/v1/waiting-room/status/{appointmentId}:
+    post:
+      summary: Advance waiting-room status
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusUpdateRequest'
+      responses:
+        '200':
+          description: Status changed
+  /api/v1/internal/jobs/waiting-room-timeout/run:
+    post:
+      summary: Expire patients exceeding waiting-room limits
+      responses:
+        '200':
+          description: Job summary
+  /api/v1/internal/jobs/no-show-detection/run:
+    post:
+      summary: Mark no-show appointments
+      responses:
+        '200':
+          description: Job summary
+components:
+  schemas:
+    ConsentGrantRequest:
+      type: object
+      required: [appointmentId]
+      properties:
+        appointmentId:
+          type: string
+        version:
+          type: string
+    ConsentWithdrawRequest:
+      type: object
+      required: [appointmentId]
+      properties:
+        appointmentId:
+          type: string
+    SessionLinkRequest:
+      type: object
+      required: [appointmentId]
+      properties:
+        appointmentId:
+          type: string
+        channel:
+          type: string
+    DeviceTestRequest:
+      type: object
+      properties:
+        camera:
+          type: boolean
+        microphone:
+          type: boolean
+        networkMbps:
+          type: integer
+    StatusUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [CHECKED_IN, OPEN_DOCTOR]

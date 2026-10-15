@@ -1,0 +1,48 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetry-service
+  namespace: telemedicine-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telemetry-service
+  template:
+    metadata:
+      labels:
+        app: telemetry-service
+    spec:
+      containers:
+        - name: telemetry-service
+          image: telemedicine/telemetry-service:0.1.0
+          ports:
+            - containerPort: 8104
+          envFrom:
+            - configMapRef:
+                name: telemedicine-backend-config
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8104
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8104
+            initialDelaySeconds: 60
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: telemetry-service
+  namespace: telemedicine-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: telemetry-service
+  ports:
+    - port: 8104
+      targetPort: 8104

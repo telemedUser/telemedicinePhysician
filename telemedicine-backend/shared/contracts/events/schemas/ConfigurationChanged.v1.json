@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/ConfigurationChanged/1.0",
+  "type": "object",
+  "required": [
+    "key",
+    "scope",
+    "previousHash",
+    "newHash",
+    "changedBy",
+    "changedAt"
+  ],
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "previousHash": {
+      "type": "string"
+    },
+    "newHash": {
+      "type": "string"
+    },
+    "changedBy": {
+      "type": "string"
+    },
+    "changedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

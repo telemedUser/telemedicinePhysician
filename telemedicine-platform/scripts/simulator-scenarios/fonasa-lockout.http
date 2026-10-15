@@ -1,0 +1,39 @@
+@baseUrl = http://localhost:8200
+
+### Challenge
+POST {{baseUrl}}/sim/fonasa/2fa/challenge
+Content-Type: application/json
+
+{
+  "patientId": "patient-lockout-001"
+}
+
+### Wrong code 1
+POST {{baseUrl}}/sim/fonasa/2fa/verify
+Content-Type: application/json
+
+{
+  "patientId": "patient-lockout-001",
+  "challengeId": "{{challengeId}}",
+  "code": "000000"
+}
+
+### Wrong code 2
+POST {{baseUrl}}/sim/fonasa/2fa/verify
+Content-Type: application/json
+
+{
+  "patientId": "patient-lockout-001",
+  "challengeId": "{{challengeId}}",
+  "code": "000000"
+}
+
+### Wrong code 3 -> lockout
+POST {{baseUrl}}/sim/fonasa/2fa/verify
+Content-Type: application/json
+
+{
+  "patientId": "patient-lockout-001",
+  "challengeId": "{{challengeId}}",
+  "code": "000000"
+}

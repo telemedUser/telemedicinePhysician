@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/LinkGenerated/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "linkId",
+    "expiresAt",
+    "channel"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "linkId": {
+      "type": "string"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "channel": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

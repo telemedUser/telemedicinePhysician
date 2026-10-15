@@ -1,0 +1,70 @@
+server:
+  port: 8114
+
+spring:
+  profiles:
+    active: dev
+  main:
+    # The shared @EnableTelemedicinePersistence and PersistenceAutoConfiguration both enable JPA
+    # auditing, which registers the same AuditingHandler bean twice. They are identical, so allow
+    # the later definition to win rather than failing startup.
+    allow-bean-definition-overriding: true
+  application:
+    name: physician-service
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:physician}
+    username: ${DB_USER:physician}
+    password: ${DB_PASSWORD:change-me-locally}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:change-me-locally}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration,classpath:db/migration/common
+    # Local dev: seed migrations get edited during the demo; don't fail boot on a checksum drift.
+    validate-on-migrate: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+
+telemedicine:
+  security:
+    # Local development only: permit-all HTTP chain. The DevPhysicianAuthFilter then seeds a
+    # physician principal so @RequiresRole method security passes. Never set on a real profile.
+    mode: ${TELEMEDICINE_SECURITY_MODE:DEV}
+  events:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+  integration:
+    config-service-base-url: ${CONFIG_SERVICE_URL:http://config-service:8112}
+  physician:
+    default-locale: es
+    integration-service-base-url: ${INTEGRATION_SERVICE_URL:http://integration-service:8107}
+    projection-staleness-seconds: 900
+    worklist-propagation-sla-seconds: 3
+    minimum-completion-set: NOTE,DIAGNOSIS
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

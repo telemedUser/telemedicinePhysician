@@ -1,0 +1,9 @@
+.physician-pip {
+  padding: 0.5rem;
+  min-height: 100vh;
+  background: var(--tm-color-bg, #fff);
+}
+
+.physician-pip nav {
+  display: none !important;
+}

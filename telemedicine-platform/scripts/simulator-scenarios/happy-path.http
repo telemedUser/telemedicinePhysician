@@ -1,0 +1,52 @@
+@baseUrl = http://localhost:8200
+
+### POST {{baseUrl}}/sim/admin/scenarios/happy
+
+### HIS appointment
+GET {{baseUrl}}/sim/his/appointments/apt-happy-001
+
+### Payment validate
+GET {{baseUrl}}/sim/payment/validate/apt-happy-001
+
+### SAP verify
+GET {{baseUrl}}/sim/sap/appointments/apt-happy-001/verify
+
+### FONASA challenge
+POST {{baseUrl}}/sim/fonasa/2fa/challenge
+Content-Type: application/json
+
+{
+  "patientId": "patient-happy-001"
+}
+
+### Vonage session
+POST {{baseUrl}}/sim/vonage/session
+Content-Type: application/json
+
+{
+  "appointmentId": "apt-happy-001"
+}
+
+### ANURA token
+POST {{baseUrl}}/sim/anura/token
+Content-Type: application/json
+
+{
+  "appointmentId": "apt-happy-001"
+}
+
+### RecMed prescription
+POST {{baseUrl}}/sim/recmed/prescriptions
+Content-Type: application/json
+
+{
+  "appointmentId": "apt-happy-001"
+}
+
+### Zendesk ticket
+POST {{baseUrl}}/sim/zendesk/tickets
+Content-Type: application/json
+
+{
+  "subject": "happy-path-support"
+}

@@ -1,0 +1,94 @@
+# PodDisruptionBudget + HPA for the three BFF aggregation layers.
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: patient-bff-pdb
+  namespace: telemedicine-backend
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: patient-bff
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: patient-bff-hpa
+  namespace: telemedicine-backend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: patient-bff
+  minReplicas: 3
+  maxReplicas: 12
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: physician-bff-pdb
+  namespace: telemedicine-backend
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: physician-bff
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: physician-bff-hpa
+  namespace: telemedicine-backend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: physician-bff
+  minReplicas: 3
+  maxReplicas: 12
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: admin-bff-pdb
+  namespace: telemedicine-backend
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: admin-bff
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: admin-bff-hpa
+  namespace: telemedicine-backend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: admin-bff
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

@@ -1,0 +1,47 @@
+openapi: 3.1.0
+info:
+  title: Admin BFF API
+  version: 1.0.0
+paths:
+  /bff/admin/config:
+    get:
+      summary: Platform configuration facade
+      responses:
+        '200':
+          description: Configuration snapshot
+  /bff/admin/config/{key}:
+    put:
+      summary: Update configuration via config-service
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated value
+  /bff/admin/audit:
+    get:
+      summary: Recent audit entries
+      responses:
+        '200':
+          description: Audit query results
+  /bff/admin/scheduler:
+    get:
+      summary: Scheduler jobs and recent runs
+      responses:
+        '200':
+          description: Scheduler status
+  /bff/admin/snapshot:
+    get:
+      summary: Operational snapshot
+      responses:
+        '200':
+          description: Live platform snapshot
+  /bff/admin/access/roles:
+    get:
+      summary: Keycloak realm roles (read-only)
+      responses:
+        '200':
+          description: Realm role names

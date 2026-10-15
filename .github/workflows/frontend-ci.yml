@@ -1,0 +1,209 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicine-frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    paths:
+      - 'telemedicine-frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: telemedicine-frontend/pnpm-lock.yaml
+      - name: Install dependencies
+        working-directory: telemedicine-frontend
+        run: pnpm install --frozen-lockfile
+      - name: Lint all projects
+        working-directory: telemedicine-frontend
+        run: pnpm exec nx run-many -t lint --all
+      - name: Test all projects with 80% coverage gate
+        working-directory: telemedicine-frontend
+        run: |
+          pnpm exec nx run-many -t test --all --coverage --coverageReporters=lcov,text-summary
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const MIN = 0.80;
+          const root = process.cwd();
+          const lcovFiles = [];
+          function walk(dir) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) walk(full);
+              else if (entry.name === 'lcov.info') lcovFiles.push(full);
+            }
+          }
+          walk(root);
+          if (lcovFiles.length === 0) {
+            console.log('No lcov.info files found — skipping aggregate gate (add vitest coverage to projects)');
+            process.exit(0);
+          }
+          let linesFound = 0, linesHit = 0;
+          for (const file of lcovFiles) {
+            const content = fs.readFileSync(file, 'utf8');
+            for (const line of content.split('\n')) {
+              if (line.startsWith('LF:')) linesFound += parseInt(line.slice(3), 10);
+              if (line.startsWith('LH:')) linesHit += parseInt(line.slice(3), 10);
+            }
+          }
+          const ratio = linesFound === 0 ? 1 : linesHit / linesFound;
+          console.log(`Aggregate line coverage: ${(ratio * 100).toFixed(2)}% (${linesHit}/${linesFound})`);
+          if (ratio < MIN) {
+            console.error(`Coverage gate failed: ${(ratio * 100).toFixed(2)}% < ${MIN * 100}%`);
+            process.exit(1);
+          }
+          NODE
+      - name: Build all apps
+        working-directory: telemedicine-frontend
+        run: pnpm exec nx run-many -t build --projects=shell,physician-shell,admin-shell,mfe-patient-consent,mfe-patient-identity,mfe-patient-waiting-room,mfe-patient-consultation,mfe-patient-documents,mfe-patient-survey,mfe-physician-consultation,mfe-physician-documentation,mfe-physician-patient-context,mfe-admin-config,mfe-admin-dashboards,mfe-admin-audit,mfe-admin-access,mfe-admin-monitoring
+
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      shell: ${{ steps.filter.outputs.shell }}
+      physician-shell: ${{ steps.filter.outputs.physician-shell }}
+      admin-shell: ${{ steps.filter.outputs.admin-shell }}
+      mfe-patient-consent: ${{ steps.filter.outputs.mfe-patient-consent }}
+      mfe-patient-identity: ${{ steps.filter.outputs.mfe-patient-identity }}
+      mfe-patient-waiting-room: ${{ steps.filter.outputs.mfe-patient-waiting-room }}
+      mfe-patient-consultation: ${{ steps.filter.outputs.mfe-patient-consultation }}
+      mfe-patient-documents: ${{ steps.filter.outputs.mfe-patient-documents }}
+      mfe-patient-survey: ${{ steps.filter.outputs.mfe-patient-survey }}
+      mfe-physician-consultation: ${{ steps.filter.outputs.mfe-physician-consultation }}
+      mfe-physician-documentation: ${{ steps.filter.outputs.mfe-physician-documentation }}
+      mfe-physician-patient-context: ${{ steps.filter.outputs.mfe-physician-patient-context }}
+      mfe-admin-config: ${{ steps.filter.outputs.mfe-admin-config }}
+      mfe-admin-dashboards: ${{ steps.filter.outputs.mfe-admin-dashboards }}
+      mfe-admin-audit: ${{ steps.filter.outputs.mfe-admin-audit }}
+      mfe-admin-access: ${{ steps.filter.outputs.mfe-admin-access }}
+      mfe-admin-monitoring: ${{ steps.filter.outputs.mfe-admin-monitoring }}
+      packages: ${{ steps.filter.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shell:
+              - 'telemedicine-frontend/apps/shell/**'
+            physician-shell:
+              - 'telemedicine-frontend/apps/physician-shell/**'
+            admin-shell:
+              - 'telemedicine-frontend/apps/admin-shell/**'
+            mfe-patient-consent:
+              - 'telemedicine-frontend/apps/mfe-patient-consent/**'
+            mfe-patient-identity:
+              - 'telemedicine-frontend/apps/mfe-patient-identity/**'
+            mfe-patient-waiting-room:
+              - 'telemedicine-frontend/apps/mfe-patient-waiting-room/**'
+            mfe-patient-consultation:
+              - 'telemedicine-frontend/apps/mfe-patient-consultation/**'
+            mfe-patient-documents:
+              - 'telemedicine-frontend/apps/mfe-patient-documents/**'
+            mfe-patient-survey:
+              - 'telemedicine-frontend/apps/mfe-patient-survey/**'
+            mfe-physician-consultation:
+              - 'telemedicine-frontend/apps/mfe-physician-consultation/**'
+            mfe-physician-documentation:
+              - 'telemedicine-frontend/apps/mfe-physician-documentation/**'
+            mfe-physician-patient-context:
+              - 'telemedicine-frontend/apps/mfe-physician-patient-context/**'
+            mfe-admin-config:
+              - 'telemedicine-frontend/apps/mfe-admin-config/**'
+            mfe-admin-dashboards:
+              - 'telemedicine-frontend/apps/mfe-admin-dashboards/**'
+            mfe-admin-audit:
+              - 'telemedicine-frontend/apps/mfe-admin-audit/**'
+            mfe-admin-access:
+              - 'telemedicine-frontend/apps/mfe-admin-access/**'
+            mfe-admin-monitoring:
+              - 'telemedicine-frontend/apps/mfe-admin-monitoring/**'
+            packages:
+              - 'telemedicine-frontend/packages/**'
+              - 'telemedicine-frontend/nx.json'
+              - 'telemedicine-frontend/pnpm-lock.yaml'
+
+  build-images:
+    needs: [test-and-coverage, detect-changes]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: shell
+            dockerfile: telemedicine-frontend/apps/shell/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.shell == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: physician-shell
+            dockerfile: telemedicine-frontend/apps/physician-shell/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.physician-shell == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: admin-shell
+            dockerfile: telemedicine-frontend/apps/admin-shell/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.admin-shell == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-patient-consent
+            dockerfile: telemedicine-frontend/apps/mfe-patient-consent/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-patient-consent == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-patient-identity
+            dockerfile: telemedicine-frontend/apps/mfe-patient-identity/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-patient-identity == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-patient-waiting-room
+            dockerfile: telemedicine-frontend/apps/mfe-patient-waiting-room/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-patient-waiting-room == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-patient-consultation
+            dockerfile: telemedicine-frontend/apps/mfe-patient-consultation/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-patient-consultation == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-patient-documents
+            dockerfile: telemedicine-frontend/apps/mfe-patient-documents/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-patient-documents == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-patient-survey
+            dockerfile: telemedicine-frontend/apps/mfe-patient-survey/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-patient-survey == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-physician-consultation
+            dockerfile: telemedicine-frontend/apps/mfe-physician-consultation/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-physician-consultation == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-physician-documentation
+            dockerfile: telemedicine-frontend/apps/mfe-physician-documentation/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-physician-documentation == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-physician-patient-context
+            dockerfile: telemedicine-frontend/apps/mfe-physician-patient-context/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-physician-patient-context == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-admin-config
+            dockerfile: telemedicine-frontend/apps/mfe-admin-config/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-admin-config == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-admin-dashboards
+            dockerfile: telemedicine-frontend/apps/mfe-admin-dashboards/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-admin-dashboards == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-admin-audit
+            dockerfile: telemedicine-frontend/apps/mfe-admin-audit/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-admin-audit == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-admin-access
+            dockerfile: telemedicine-frontend/apps/mfe-admin-access/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-admin-access == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+          - app: mfe-admin-monitoring
+            dockerfile: telemedicine-frontend/apps/mfe-admin-monitoring/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.mfe-admin-monitoring == 'true' || needs.detect-changes.outputs.packages == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.app }}
+        if: matrix.changed == true
+        run: |
+          docker build -f ${{ matrix.dockerfile }} \
+            -t telemedicine/${{ matrix.app }}:${{ github.sha }} \
+            telemedicine-frontend

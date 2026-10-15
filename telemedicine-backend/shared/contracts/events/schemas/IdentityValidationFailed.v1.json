@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/IdentityValidationFailed/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "patientRef",
+    "method",
+    "reasonCode",
+    "attempt",
+    "failedAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "patientRef": {
+      "type": "string"
+    },
+    "method": {
+      "type": "string"
+    },
+    "reasonCode": {
+      "type": "string"
+    },
+    "attempt": {
+      "type": "integer"
+    },
+    "failedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

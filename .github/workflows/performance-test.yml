@@ -1,0 +1,56 @@
+name: Performance Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      gateway_url:
+        description: Gateway base URL
+        required: false
+        default: http://localhost:8080
+  schedule:
+    - cron: '0 4 * * 1'
+  pull_request:
+    paths:
+      - 'telemedicine-platform/tests/k6/**'
+      - 'telemedicine-backend/gateway/**'
+      - 'telemedicine-backend/bff/**'
+      - '.github/workflows/performance-test.yml'
+
+concurrency:
+  group: performance-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  k6-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | \
+            sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+      - name: Run gateway load test
+        env:
+          GATEWAY_URL: ${{ github.event.inputs.gateway_url || 'http://localhost:8080' }}
+        run: k6 run telemedicine-platform/tests/k6/gateway-load.js
+      - name: Run BFF load test
+        env:
+          GATEWAY_URL: ${{ github.event.inputs.gateway_url || 'http://localhost:8080' }}
+        run: k6 run telemedicine-platform/tests/k6/bff-load.js
+      - name: Run domain services load test
+        env:
+          GATEWAY_URL: ${{ github.event.inputs.gateway_url || 'http://localhost:8080' }}
+        run: k6 run telemedicine-platform/tests/k6/domain-services.js
+      - name: Run patient journey test (p95 < 300ms)
+        env:
+          GATEWAY_URL: ${{ github.event.inputs.gateway_url || 'http://localhost:8080' }}
+        run: k6 run telemedicine-platform/tests/k6/patient-journey.js
+      - name: Run event throughput test
+        env:
+          GATEWAY_URL: ${{ github.event.inputs.gateway_url || 'http://localhost:8080' }}
+        run: k6 run telemedicine-platform/tests/k6/event-throughput.js

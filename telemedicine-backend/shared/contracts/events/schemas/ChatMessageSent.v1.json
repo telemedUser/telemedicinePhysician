@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/ChatMessageSent/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "sessionId",
+    "messageId",
+    "senderRole",
+    "sentAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "messageId": {
+      "type": "string"
+    },
+    "senderRole": {
+      "type": "string"
+    },
+    "sentAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

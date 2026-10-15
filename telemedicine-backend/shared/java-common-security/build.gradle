@@ -1,0 +1,31 @@
+plugins {
+    id 'telemedicine.java-library-conventions'
+    id 'telemedicine.quality-conventions'
+    id 'telemedicine.spring-library-conventions'
+    id 'telemedicine.publishing-conventions'
+}
+
+description = 'Keycloak JWT resource server, role mapping, method security, consent gate and security headers.'
+
+dependencies {
+    api project(':java-common-core')
+    api 'org.springframework.boot:spring-boot-starter-security'
+    api 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+
+    // @RequiresConsent is a load-bearing guarantee, not a nicety: if AOP were absent the annotation
+    // would silently do nothing and unconsented requests would succeed. Bundled deliberately.
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // Supplied by the servlet container at runtime; needed here to compile the entry point and
+    // access-denied handler that render problem documents before Spring MVC is reached.
+    compileOnly libs.jakarta.servlet.api
+
+    // The reactive claim-propagation filter compiles here but only registers where WebFlux is on
+    // the consumer's classpath, so servlet-only services do not pull in Reactor.
+    compileOnly 'org.springframework:spring-webflux'
+
+    testImplementation 'org.springframework:spring-webflux'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation libs.nimbus.jose.jwt
+}

@@ -1,0 +1,42 @@
+server:
+  port: 8107
+
+spring:
+  profiles:
+    active: postgres
+  application:
+    name: integration-service
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+
+telemedicine:
+  events:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+  integration:
+    simulator:
+      base-url: ${SIMULATOR_BASE_URL:http://external-simulators:8200}
+    webhook:
+      secret: ${INTEGRATION_WEBHOOK_SECRET:integration-webhook-dev-secret}
+  integration-service:
+    waiting-room-base-url: ${WAITING_ROOM_BASE_URL:http://waiting-room-service:8101}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

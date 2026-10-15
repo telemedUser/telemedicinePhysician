@@ -1,0 +1,110 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../
+
+replicas:
+  - name: gateway
+    count: 2
+  - name: patient-bff
+    count: 2
+  - name: physician-bff
+    count: 2
+  - name: admin-bff
+    count: 2
+  - name: waiting-room-service
+    count: 2
+  - name: identity-service
+    count: 2
+  - name: video-service
+    count: 2
+  - name: integration-service
+    count: 2
+  - name: shell
+    count: 2
+  - name: physician-shell
+    count: 2
+  - name: admin-shell
+    count: 2
+
+images:
+  - name: telemedicine/gateway
+    newTag: staging
+  - name: telemedicine/patient-bff
+    newTag: staging
+  - name: telemedicine/physician-bff
+    newTag: staging
+  - name: telemedicine/admin-bff
+    newTag: staging
+  - name: telemedicine/waiting-room-service
+    newTag: staging
+  - name: telemedicine/identity-service
+    newTag: staging
+  - name: telemedicine/video-service
+    newTag: staging
+  - name: telemedicine/telemetry-service
+    newTag: staging
+  - name: telemedicine/clinical-docs-service
+    newTag: staging
+  - name: telemedicine/notification-service
+    newTag: staging
+  - name: telemedicine/integration-service
+    newTag: staging
+  - name: telemedicine/survey-service
+    newTag: staging
+  - name: telemedicine/reporting-service
+    newTag: staging
+  - name: telemedicine/monitoring-service
+    newTag: staging
+  - name: telemedicine/config-service
+    newTag: staging
+  - name: telemedicine/audit-service
+    newTag: staging
+  - name: telemedicine/scheduler-service
+    newTag: staging
+  - name: telemedicine/shell
+    newTag: staging
+  - name: telemedicine/physician-shell
+    newTag: staging
+  - name: telemedicine/admin-shell
+    newTag: staging
+  - name: telemedicine/mfe-patient-consent
+    newTag: staging
+  - name: telemedicine/mfe-patient-identity
+    newTag: staging
+  - name: telemedicine/mfe-patient-waiting-room
+    newTag: staging
+  - name: telemedicine/mfe-patient-consultation
+    newTag: staging
+  - name: telemedicine/mfe-patient-documents
+    newTag: staging
+  - name: telemedicine/mfe-patient-survey
+    newTag: staging
+  - name: telemedicine/mfe-physician-consultation
+    newTag: staging
+  - name: telemedicine/mfe-physician-documentation
+    newTag: staging
+  - name: telemedicine/mfe-physician-patient-context
+    newTag: staging
+  - name: telemedicine/mfe-admin-config
+    newTag: staging
+  - name: telemedicine/mfe-admin-dashboards
+    newTag: staging
+  - name: telemedicine/mfe-admin-audit
+    newTag: staging
+  - name: telemedicine/mfe-admin-access
+    newTag: staging
+  - name: telemedicine/mfe-admin-monitoring
+    newTag: staging
+
+patches:
+  - path: patches/env-config.yaml
+  - path: patches/ingress-hosts.yaml
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: telemedicine-ingress-green
+        namespace: telemedicine

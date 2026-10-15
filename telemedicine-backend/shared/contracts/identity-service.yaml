@@ -1,0 +1,33 @@
+openapi: 3.1.0
+info:
+  title: Identity Service API
+  version: 1.0.0
+paths:
+  /api/v1/identity/validate:
+    post:
+      summary: Validate patient identity against MPI
+      responses:
+        '200':
+          description: Identity validated
+        '404':
+          description: MPI patient not found
+        '422':
+          description: Identity validation failed
+  /api/v1/identity/fonasa/2fa/challenge:
+    post:
+      summary: Start FONASA two-factor challenge via integration ACL
+      responses:
+        '200':
+          description: Challenge issued
+        '423':
+          description: Identity locked out
+  /api/v1/identity/fonasa/2fa/verify:
+    post:
+      summary: Verify FONASA two-factor code via integration ACL
+      responses:
+        '200':
+          description: Verification result
+        '422':
+          description: Invalid verification code
+        '423':
+          description: Identity locked out

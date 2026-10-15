@@ -1,0 +1,79 @@
+openapi: 3.1.0
+info:
+  title: Audit Service API
+  version: 1.0.0
+paths:
+  /api/v1/audit:
+    get:
+      summary: Query audit events
+      parameters:
+        - name: actor
+          in: query
+          schema:
+            type: string
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: size
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated audit events
+    post:
+      summary: Ingest audit event (service)
+      responses:
+        '200':
+          description: Recorded event
+  /api/v1/audit/consent:
+    get:
+      summary: Consent ledger query
+      parameters:
+        - name: appointmentId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Consent ledger entries
+  /api/v1/audit/chain/verify:
+    get:
+      summary: Verify hash chain integrity
+      responses:
+        '200':
+          description: Chain valid
+        '500':
+          description: Chain broken
+  /api/v1/audit/exports:
+    post:
+      summary: Export audit data to MinIO
+      responses:
+        '200':
+          description: Export location and download URL
+  /api/v1/audit/retention/run:
+    post:
+      summary: Run retention policy (scheduler)
+      responses:
+        '200':
+          description: Retention summary

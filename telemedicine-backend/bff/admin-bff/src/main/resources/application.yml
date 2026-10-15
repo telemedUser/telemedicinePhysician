@@ -1,0 +1,42 @@
+server:
+  port: 8092
+
+spring:
+  application:
+    name: admin-bff
+  profiles:
+    active: dev
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+
+telemedicine:
+  security:
+    mode: ${SECURITY_MODE:jwt}
+    jwt:
+      jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/telemedicine/protocol/openid-connect/certs}
+      issuer-uri: ${KEYCLOAK_ISSUER_URI:http://keycloak:8080/realms/telemedicine}
+  integration:
+    config-service-base-url: lb://config-service
+    config-cache-ttl: 1m
+  bff:
+    downstream:
+      config-service: lb://config-service
+      audit-service: lb://audit-service
+      scheduler-service: lb://scheduler-service
+      monitoring-service: lb://monitoring-service
+    rest-client:
+      connect-timeout: 500ms
+      read-timeout: 2000ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

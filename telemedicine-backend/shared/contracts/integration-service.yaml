@@ -1,0 +1,124 @@
+openapi: 3.1.0
+info:
+  title: Integration Service API
+  version: 1.0.0
+paths:
+  /v1/appointments/v2:
+    post:
+      summary: Create appointment projection
+      responses:
+        '200':
+          description: Appointment created
+    get:
+      summary: Not supported on collection path
+      responses:
+        '405':
+          description: Method not allowed
+  /v1/appointments/v2/{id}:
+    get:
+      summary: Consult appointment projection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Appointment details
+        '404':
+          description: Appointment not found
+  /v1/appointments/v2/{id}/status:
+    put:
+      summary: Update appointment status via HIS
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status updated
+  /v1/appointments/v2/{id}/reschedule:
+    post:
+      summary: Reschedule appointment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Appointment rescheduled
+  /v1/appointments/v2/{id}/payment/validate:
+    post:
+      summary: Validate payment via external payment system
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment confirmed
+        '402':
+          description: Payment not confirmed
+  /v1/appointments/v2/{id}/mpi:
+    get:
+      summary: MPI patient lookup for appointment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: MPI patient record
+  /api/v1/integration/fonasa/2fa/challenge:
+    post:
+      summary: Start FONASA 2FA challenge (service)
+      responses:
+        '200':
+          description: Challenge issued
+  /api/v1/integration/fonasa/2fa/verify:
+    post:
+      summary: Verify FONASA 2FA code (service)
+      responses:
+        '200':
+          description: Verification result
+  /api/v1/integration/his/appointments/{id}/status:
+    post:
+      summary: Update HIS appointment status (service)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: HIS status updated
+  /api/v1/integration/zendesk/tickets:
+    post:
+      summary: Create Zendesk support ticket (service)
+      responses:
+        '200':
+          description: Ticket created
+  /api/v1/integration/webhooks/{system}:
+    post:
+      summary: Inbound vendor webhook
+      parameters:
+        - name: system
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Webhook accepted
+        '401':
+          description: Invalid signature

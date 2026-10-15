@@ -1,0 +1,2 @@
+com.telemedicine.common.security.autoconfigure.ResourceServerAutoConfiguration
+com.telemedicine.common.security.consent.HttpConsentVerifierConfiguration

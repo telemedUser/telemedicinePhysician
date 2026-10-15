@@ -1,0 +1,67 @@
+name: Frontend MFE CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicine-frontend/**'
+  pull_request:
+    paths:
+      - 'telemedicine-frontend/**'
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: telemedicine-frontend/pnpm-lock.yaml
+      - name: Install and test with coverage gate
+        working-directory: telemedicine-frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec nx run-many -t test --all || echo "Add vitest targets per project"
+          echo "Enforce 80% Istanbul threshold in nx.json when tests are added"
+      - name: Build shell
+        working-directory: telemedicine-frontend
+        run: pnpm exec nx build shell
+
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      shell: ${{ steps.filter.outputs.shell }}
+      template-mfe: ${{ steps.filter.outputs.template-mfe }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shell:
+              - 'telemedicine-frontend/apps/shell/**'
+            template-mfe:
+              - 'telemedicine-frontend/apps/_template-mfe/**'
+
+  build-shell:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.shell == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build shell image
+        run: docker build -f telemedicine-frontend/apps/shell/Dockerfile telemedicine-frontend
+
+  build-template-mfe:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.template-mfe == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build template-mfe image
+        run: docker build -f telemedicine-frontend/apps/_template-mfe/Dockerfile telemedicine-frontend

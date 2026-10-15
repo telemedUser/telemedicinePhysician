@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/IntegrationFailed/1.0",
+  "type": "object",
+  "required": [
+    "system",
+    "operation",
+    "subjectRef",
+    "errorCode",
+    "retryable",
+    "failedAt"
+  ],
+  "properties": {
+    "system": {
+      "type": "string"
+    },
+    "operation": {
+      "type": "string"
+    },
+    "subjectRef": {
+      "type": "string"
+    },
+    "errorCode": {
+      "type": "string"
+    },
+    "retryable": {
+      "type": "boolean"
+    },
+    "failedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

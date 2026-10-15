@@ -1,0 +1,15 @@
+plugins {
+    id 'telemedicine.java-library-conventions'
+    id 'telemedicine.quality-conventions'
+    id 'telemedicine.spring-library-conventions'
+    id 'telemedicine.publishing-conventions'
+}
+
+description = 'Optional JSON mock datastore for @Profile("mock") services. Remove when all services use Postgres.'
+
+dependencies {
+    api project(':java-common-core')
+    api 'com.fasterxml.jackson.core:jackson-databind'
+    api 'org.springframework.boot:spring-boot-autoconfigure'
+    api 'org.springframework:spring-context'
+}

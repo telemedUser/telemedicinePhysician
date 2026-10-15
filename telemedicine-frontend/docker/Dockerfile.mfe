@@ -1,0 +1,21 @@
+# Multi-stage build for any Nx frontend app under apps/.
+# Usage: docker build --build-arg NX_APP=mfe-patient-consent -f docker/Dockerfile.mfe .
+
+ARG NX_APP
+FROM node:20-alpine AS build
+ARG NX_APP
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+COPY package.json pnpm-workspace.yaml nx.json tsconfig.base.json ./
+COPY apps ./apps
+COPY packages ./packages
+COPY tools ./tools
+RUN pnpm install --no-frozen-lockfile
+RUN pnpm exec nx build ${NX_APP}
+
+FROM nginx:1.27-alpine
+ARG NX_APP
+COPY apps/${NX_APP}/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist/apps/${NX_APP} /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,0 +1,21 @@
+openapi: 3.1.0
+info:
+  title: Notification Service API
+  version: 1.0.0
+paths:
+  /api/v1/notifications/send:
+    post:
+      summary: Send a templated notification
+      responses:
+        '200':
+          description: Notification sent
+        '404':
+          description: Template not found
+        '503':
+          description: Channel unavailable
+  /api/v1/internal/jobs/appointment-reminders/run:
+    post:
+      summary: Run appointment reminder dispatch job
+      responses:
+        '200':
+          description: Job summary

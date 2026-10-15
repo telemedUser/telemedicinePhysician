@@ -1,0 +1,93 @@
+{
+  "realm": "telemedicine",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      { "name": "PATIENT", "description": "Patient portal access" },
+      { "name": "PHYSICIAN", "description": "Physician clinical UI access" },
+      { "name": "ADMIN", "description": "Administrator console access" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "patient-portal",
+      "name": "Patient Portal Shell",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "physician-ui",
+      "name": "Physician Clinical UI",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": ["http://localhost:3010/*"],
+      "webOrigins": ["http://localhost:3010"],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "admin-console",
+      "name": "Administrator Console",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": ["http://localhost:3020/*"],
+      "webOrigins": ["http://localhost:3020"],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "gateway",
+      "name": "API Gateway",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "gateway-dev-secret-change-in-prod",
+      "directAccessGrantsEnabled": false,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "username": "patient.demo",
+      "enabled": true,
+      "email": "patient@example.com",
+      "firstName": "Demo",
+      "lastName": "Patient",
+      "credentials": [{ "type": "password", "value": "patient123", "temporary": false }],
+      "realmRoles": ["PATIENT"]
+    },
+    {
+      "username": "physician.demo",
+      "enabled": true,
+      "email": "physician@example.com",
+      "firstName": "Demo",
+      "lastName": "Physician",
+      "credentials": [{ "type": "password", "value": "physician123", "temporary": false }],
+      "realmRoles": ["PHYSICIAN"]
+    },
+    {
+      "username": "admin.demo",
+      "enabled": true,
+      "email": "admin@example.com",
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "credentials": [{ "type": "password", "value": "admin123", "temporary": false }],
+      "realmRoles": ["ADMIN"]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+dependencies {
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+def importsPath = 'META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports'
+
+// A shared library whose beans are never registered is the failure mode this whole phase
+// exists to fix, so the import file is validated as part of `check` rather than trusted.
+def verifyImports = tasks.register('verifyAutoConfigurationImports') {
+    description = 'Asserts every class listed in AutoConfiguration.imports is present in the compiled output.'
+    group = 'verification'
+
+    def importsFile = layout.projectDirectory.file("src/main/resources/${importsPath}")
+    def classesDir = layout.buildDirectory.dir('classes/java/main')
+    inputs.file(importsFile).optional(true)
+    inputs.dir(classesDir).optional(true).withPropertyName('mainClasses')
+    outputs.upToDateWhen { true }
+
+    dependsOn tasks.named('classes')
+
+    doLast {
+        def file = importsFile.asFile
+        if (!file.exists()) {
+            throw new GradleException(
+                    "${project.name} applies the Spring library conventions but has no ${importsPath}. " +
+                            'Add the file, or drop the convention plugin if the module is not auto-configured.')
+        }
+        def root = classesDir.get().asFile
+        def declared = file.readLines()*.trim().findAll { it && !it.startsWith('#') }
+        if (declared.isEmpty()) {
+            throw new GradleException("${importsPath} in ${project.name} lists no auto-configuration classes.")
+        }
+        declared.each { className ->
+            def classFile = new File(root, className.replace('.', '/') + '.class')
+            if (!classFile.exists()) {
+                throw new GradleException(
+                        "${importsPath} in ${project.name} lists ${className}, which does not exist in the compiled output.")
+            }
+        }
+        logger.lifecycle("${project.name}: verified ${declared.size()} auto-configuration class(es).")
+    }
+}
+
+tasks.named('check') { dependsOn verifyImports }

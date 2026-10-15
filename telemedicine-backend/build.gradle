@@ -1,0 +1,88 @@
+plugins {
+    id 'org.springframework.boot' version '3.3.5' apply false
+    id 'io.spring.dependency-management' version '1.1.6' apply false
+}
+
+// Shared libraries opt out of the blanket service configuration below: they carry their own
+// convention plugins (toolchain, quality gates, publishing) from build-logic, and the BOM is a
+// java-platform which cannot also apply the `java` plugin.
+ext.sharedLibraryModules = [
+        'java-common-bom',
+        'java-common-core',
+        'java-common-web',
+        'java-common-security',
+        'java-common-events',
+        'java-common-observability',
+        'java-common-persistence',
+        'java-common-integration',
+        'java-common-audit',
+        'java-common-mock-data',
+        'java-common-testing'
+] as Set
+
+allprojects {
+    group = 'com.telemedicine'
+}
+
+subprojects {
+    if (name in rootProject.ext.sharedLibraryModules) {
+        return
+    }
+
+    version = '0.1.0-SNAPSHOT'
+
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+        }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs += ['-parameters']
+    }
+
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+    }
+}
+
+// Task paths keep these aggregates lazy; resolving Project objects here would force the shared
+// modules to configure before their own convention plugins have run.
+def codeModules = rootProject.ext.sharedLibraryModules - 'java-common-bom'
+
+tasks.register('sharedLibsCheck') {
+    group = 'verification'
+    description = 'Runs the full quality gate for every shared library module.'
+    dependsOn codeModules.collect { ":${it}:check" }
+}
+
+tasks.register('sharedLibsTest') {
+    group = 'verification'
+    description = 'Runs unit tests for every shared library module.'
+    dependsOn codeModules.collect { ":${it}:test" }
+}
+
+tasks.register('sharedLibsIntegrationTest') {
+    group = 'verification'
+    description = 'Runs Testcontainers-backed integration tests for every shared library module.'
+    dependsOn codeModules.collect { ":${it}:integrationTest" }
+}
+
+tasks.register('sharedLibsPublishLocal') {
+    group = 'publishing'
+    description = 'Publishes every shared library module to the local Maven repository.'
+    dependsOn rootProject.ext.sharedLibraryModules.collect { ":${it}:publishToMavenLocal" }
+}

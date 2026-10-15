@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/MedicalLeaveIssued/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "medicalLeaveId",
+    "provider",
+    "physicianRef",
+    "durationDays",
+    "issuedAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "medicalLeaveId": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "physicianRef": {
+      "type": "string"
+    },
+    "durationDays": {
+      "type": "integer"
+    },
+    "issuedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

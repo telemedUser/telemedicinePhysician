@@ -1,0 +1,68 @@
+plugins {
+    id 'java-platform'
+    id 'base'
+    id 'maven-publish'
+}
+
+description = 'Bill of materials pinning every Telemedicine shared Java library to one version.'
+version = providers.gradleProperty('sharedLibsVersion').getOrElse('1.0.0-SNAPSHOT')
+
+def githubOwner = providers.gradleProperty('githubOwner').getOrElse('bupa-research')
+def githubRepo = providers.gradleProperty('githubRepo').getOrElse('telemedicine')
+def packagesUser = providers.environmentVariable('GH_PACKAGES_USER')
+def packagesToken = providers.environmentVariable('GH_PACKAGES_TOKEN')
+
+dependencies {
+    constraints {
+        api "com.telemedicine:java-common-core:${version}"
+        api "com.telemedicine:java-common-web:${version}"
+        api "com.telemedicine:java-common-security:${version}"
+        api "com.telemedicine:java-common-events:${version}"
+        api "com.telemedicine:java-common-observability:${version}"
+        api "com.telemedicine:java-common-persistence:${version}"
+        api "com.telemedicine:java-common-integration:${version}"
+        api "com.telemedicine:java-common-audit:${version}"
+        api "com.telemedicine:java-common-mock-data:${version}"
+        api "com.telemedicine:java-common-testing:${version}"
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.javaPlatform
+            pom {
+                name = 'Telemedicine shared library BOM'
+                description = project.description
+                url = "https://github.com/${githubOwner}/${githubRepo}"
+                licenses {
+                    license {
+                        name = 'Proprietary'
+                        distribution = 'repo'
+                    }
+                }
+                organization {
+                    name = 'Bupa Research Programme'
+                    url = "https://github.com/${githubOwner}"
+                }
+                scm {
+                    url = "https://github.com/${githubOwner}/${githubRepo}"
+                    connection = "scm:git:https://github.com/${githubOwner}/${githubRepo}.git"
+                    developerConnection = "scm:git:ssh://git@github.com/${githubOwner}/${githubRepo}.git"
+                }
+            }
+        }
+    }
+    repositories {
+        if (packagesUser.isPresent() && packagesToken.isPresent()) {
+            maven {
+                name = 'GitHubPackages'
+                url = "https://maven.pkg.github.com/${githubOwner}/${githubRepo}"
+                credentials {
+                    username = packagesUser.get()
+                    password = packagesToken.get()
+                }
+            }
+        }
+    }
+}

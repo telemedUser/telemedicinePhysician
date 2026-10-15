@@ -1,0 +1,48 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clinical-docs-service
+  namespace: telemedicine-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clinical-docs-service
+  template:
+    metadata:
+      labels:
+        app: clinical-docs-service
+    spec:
+      containers:
+        - name: clinical-docs-service
+          image: telemedicine/clinical-docs-service:0.1.0
+          ports:
+            - containerPort: 8105
+          envFrom:
+            - configMapRef:
+                name: telemedicine-backend-config
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8105
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8105
+            initialDelaySeconds: 60
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clinical-docs-service
+  namespace: telemedicine-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: clinical-docs-service
+  ports:
+    - port: 8105
+      targetPort: 8105

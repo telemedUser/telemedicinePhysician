@@ -1,0 +1,41 @@
+plugins {
+    id 'telemedicine.java-library-conventions'
+    id 'telemedicine.quality-conventions'
+    id 'telemedicine.spring-library-conventions'
+    id 'telemedicine.publishing-conventions'
+}
+
+description = 'JPA persistence defaults: auditing, PHI encryption, transactional outbox, idempotency and cache.'
+
+dependencies {
+    api project(':java-common-core')
+    api project(':java-common-events')
+    api project(':java-common-web')
+    api libs.spring.boot.starter.data.jpa
+    api libs.spring.kafka
+    api libs.flyway.core
+    api libs.jackson.databind
+    api libs.jackson.datatype.jsr310
+
+    implementation libs.spring.boot.autoconfigure
+    implementation libs.spring.context
+    implementation libs.spring.boot.starter.data.redis
+    implementation 'io.micrometer:micrometer-core'
+
+    compileOnly project(':java-common-security')
+    compileOnly libs.spring.boot.configuration.processor
+
+    testImplementation project(':java-common-security')
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.h2
+    testImplementation libs.awaitility
+
+    integrationTestImplementation project(':java-common-core')
+    integrationTestImplementation libs.testcontainers.junit.jupiter
+    integrationTestImplementation libs.testcontainers.postgresql
+    integrationTestImplementation libs.testcontainers.core
+    integrationTestImplementation libs.flyway.postgresql
+    integrationTestImplementation libs.postgresql
+    integrationTestImplementation libs.spring.boot.starter.test
+    integrationTestImplementation libs.awaitility
+}

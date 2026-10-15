@@ -1,0 +1,29 @@
+[
+  {
+    "id": "apt-001",
+    "patientId": "pat-001",
+    "physicianId": "phy-001",
+    "status": "SCHEDULED",
+    "scheduledAt": "2026-08-12T10:00:00Z",
+    "paymentStatus": "CONFIRMED",
+    "source": "sim-his"
+  },
+  {
+    "id": "apt-002",
+    "patientId": "pat-002",
+    "physicianId": "phy-001",
+    "status": "OPEN_PATIENT",
+    "scheduledAt": "2026-08-12T14:00:00Z",
+    "paymentStatus": "PENDING",
+    "source": "sim-his"
+  },
+  {
+    "id": "apt-demo",
+    "patientId": "pat-demo",
+    "physicianId": "phy-001",
+    "status": "CHECKED_IN",
+    "scheduledAt": "2026-08-12T09:00:00Z",
+    "paymentStatus": "CONFIRMED",
+    "source": "sim-his"
+  }
+]

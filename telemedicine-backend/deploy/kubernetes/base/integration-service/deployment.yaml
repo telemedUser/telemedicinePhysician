@@ -1,0 +1,48 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integration-service
+  namespace: telemedicine-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: integration-service
+  template:
+    metadata:
+      labels:
+        app: integration-service
+    spec:
+      containers:
+        - name: integration-service
+          image: telemedicine/integration-service:0.1.0
+          ports:
+            - containerPort: 8107
+          envFrom:
+            - configMapRef:
+                name: telemedicine-backend-config
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8107
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8107
+            initialDelaySeconds: 60
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: integration-service
+  namespace: telemedicine-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: integration-service
+  ports:
+    - port: 8107
+      targetPort: 8107

@@ -1,0 +1,43 @@
+openapi: 3.1.0
+info:
+  title: Clinical Docs Service API
+  version: 1.0.0
+paths:
+  /api/v1/clinical-docs:
+    post:
+      summary: Issue a clinical document
+      responses:
+        '200':
+          description: Document issued
+        '500':
+          description: Document generation failed
+  /api/v1/clinical-docs/{appointmentId}/prescriptions:
+    post:
+      summary: Issue a prescription via RecMed
+      responses:
+        '200':
+          description: Prescription issued
+        '502':
+          description: Prescription issue failed
+  /api/v1/clinical-docs/{appointmentId}/medical-leave:
+    post:
+      summary: Issue a medical leave certificate via Medipass
+      responses:
+        '200':
+          description: Medical leave issued
+  /api/v1/clinical-docs/{appointmentId}:
+    get:
+      summary: List appointment documents with download URL
+      responses:
+        '200':
+          description: Documents listed
+        '404':
+          description: Document not found
+  /api/v1/clinical-docs/download/{token}:
+    get:
+      summary: Download a clinical document using a time-limited token
+      responses:
+        '200':
+          description: PDF bytes
+        '403':
+          description: Access denied

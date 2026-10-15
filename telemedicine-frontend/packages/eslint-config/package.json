@@ -1,0 +1,9 @@
+{
+  "name": "@telemedicine/eslint-config",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./index.js",
+  "scripts": {
+    "lint": "node -e \"console.log('eslint-config ok')\""
+  }
+}

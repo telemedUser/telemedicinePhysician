@@ -1,0 +1,11 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: telemedicine-ingress
+  namespace: telemedicine
+spec:
+  rules:
+    - host: app.example.com
+    - host: physician.example.com
+    - host: admin.example.com
+    - host: api.example.com

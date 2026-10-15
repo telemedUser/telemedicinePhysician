@@ -1,0 +1,34 @@
+openapi: 3.1.0
+info:
+  title: Video Service API
+  version: 1.0.0
+paths:
+  /api/v1/video/sessions:
+    post:
+      summary: Create a video session for an appointment
+  /api/v1/video/sessions/{sessionId}:
+    get:
+      summary: Get session details
+  /api/v1/video/appointments/{appointmentId}/session:
+    get:
+      summary: Lookup session by appointment
+  /api/v1/video/sessions/{sessionId}/tokens:
+    post:
+      summary: Issue a provider token for a role
+  /api/v1/video/sessions/{sessionId}/join:
+    post:
+      summary: Mark participant joined and emit VideoSessionStarted
+  /api/v1/video/sessions/{sessionId}/leave:
+    post:
+      summary: End session and emit VideoSessionEnded
+  /api/v1/video/sessions/{sessionId}/quality:
+    post:
+      summary: Record connection quality sample for monitoring
+  /api/v1/video/sessions/{sessionId}/chat:
+    get:
+      summary: List chat messages for a session
+    post:
+      summary: Send a chat message
+  /api/v1/internal/jobs/session-expiry-cleanup/run:
+    post:
+      summary: Expire stale sessions and tokens (scheduler)

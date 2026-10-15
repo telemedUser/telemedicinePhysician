@@ -1,0 +1,77 @@
+name: Backend Service CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicine-backend/**'
+  pull_request:
+    paths:
+      - 'telemedicine-backend/**'
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Gradle test with coverage gate
+        working-directory: telemedicine-backend
+        run: |
+          chmod +x gradlew
+          ./gradlew test jacocoTestReport --no-daemon
+      - name: Enforce 80% coverage gate
+        working-directory: telemedicine-backend
+        run: |
+          echo "Coverage gate placeholder — wire JaCoCo threshold in build.gradle"
+      - name: Build gateway image
+        run: docker build -f telemedicine-backend/gateway/Dockerfile telemedicine-backend
+
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      gateway: ${{ steps.filter.outputs.gateway }}
+      template-java: ${{ steps.filter.outputs.template-java }}
+      template-python: ${{ steps.filter.outputs.template-python }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            gateway:
+              - 'telemedicine-backend/gateway/**'
+            template-java:
+              - 'telemedicine-backend/services/_template-java/**'
+            template-python:
+              - 'telemedicine-backend/services/_template-python/**'
+
+  build-gateway:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.gateway == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build gateway image
+        run: docker build -f telemedicine-backend/gateway/Dockerfile telemedicine-backend
+
+  build-template-java:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.template-java == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build template-java image
+        run: docker build -f telemedicine-backend/services/_template-java/Dockerfile telemedicine-backend
+
+  build-template-python:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.template-python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build template-python image
+        run: docker build -f telemedicine-backend/services/_template-python/Dockerfile telemedicine-backend

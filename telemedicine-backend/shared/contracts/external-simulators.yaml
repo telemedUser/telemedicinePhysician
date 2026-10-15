@@ -1,0 +1,136 @@
+openapi: 3.1.0
+info:
+  title: External Simulators API
+  version: 1.0.0
+  description: Dev/test vendor simulators for the telemedicine platform ACL adapters.
+servers:
+  - url: http://localhost:8200
+paths:
+  /sim/admin/vendors:
+    get:
+      summary: List vendor runtime configuration
+      responses:
+        "200":
+          description: Vendor config map
+  /sim/admin/vendors/{vendor}:
+    get:
+      summary: Get vendor config
+      parameters:
+        - name: vendor
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      summary: Update vendor latency/error-rate/enabled
+      parameters:
+        - name: vendor
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorConfigUpdate'
+  /sim/his/appointments/{id}:
+    get:
+      summary: Get HIS appointment
+      parameters:
+        - $ref: '#/components/parameters/SimScenario'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Appointment payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HisAppointmentResponse'
+  /sim/payment/validate/{appointmentId}:
+    get:
+      summary: Validate payment
+      parameters:
+        - $ref: '#/components/parameters/SimScenario'
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+  /sim/fonasa/2fa/challenge:
+    post:
+      summary: Start FONASA 2FA challenge
+      parameters:
+        - $ref: '#/components/parameters/SimScenario'
+  /sim/fonasa/2fa/verify:
+    post:
+      summary: Verify FONASA 2FA code
+      parameters:
+        - $ref: '#/components/parameters/SimScenario'
+  /sim/vonage/session:
+    post:
+      summary: Create Vonage session
+      parameters:
+        - $ref: '#/components/parameters/SimScenario'
+  /sim/v3/api-docs:
+    get:
+      summary: OpenAPI document served by springdoc
+components:
+  parameters:
+    SimScenario:
+      name: X-Sim-Scenario
+      in: header
+      required: false
+      schema:
+        type: string
+        enum:
+          - success
+          - failure
+          - timeout
+          - partial
+          - not-found
+          - unpaid
+          - locked-out
+          - session-expired
+  schemas:
+    VendorConfigUpdate:
+      type: object
+      properties:
+        latencyMs:
+          type: integer
+        latencyJitterMs:
+          type: integer
+        errorRate:
+          type: number
+        timeoutRate:
+          type: number
+        scenario:
+          type: string
+        enabled:
+          type: boolean
+    HisAppointmentResponse:
+      type: object
+      required: [appointmentId, status, patientId]
+      properties:
+        appointmentId:
+          type: string
+        status:
+          type: string
+        patientId:
+          type: string
+        specialty:
+          type: string
+        physicianId:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        facilityCode:
+          type: string
+        appointmentType:
+          type: string

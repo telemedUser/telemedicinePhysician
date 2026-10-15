@@ -1,0 +1,89 @@
+plugins {
+    id 'maven-publish'
+}
+
+def githubOwner = providers.gradleProperty('githubOwner').getOrElse('bupa-research')
+def githubRepo = providers.gradleProperty('githubRepo').getOrElse('telemedicine')
+def packagesUser = providers.environmentVariable('GH_PACKAGES_USER')
+def packagesToken = providers.environmentVariable('GH_PACKAGES_TOKEN')
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+
+            // Versions for Spring-managed dependencies come from an imported BOM, so they are
+            // absent from the generated metadata unless we write the resolved ones. Without this,
+            // a consumer outside this build cannot resolve the library at all.
+            versionMapping {
+                usage('java-api') { fromResolutionOf('runtimeClasspath') }
+                usage('java-runtime') { fromResolutionResult() }
+            }
+
+            pom {
+                name = project.name
+                description = providers.provider { project.description ?: "Telemedicine shared library: ${project.name}" }
+                url = "https://github.com/${githubOwner}/${githubRepo}"
+                licenses {
+                    license {
+                        name = 'Proprietary'
+                        distribution = 'repo'
+                    }
+                }
+                organization {
+                    name = 'Bupa Research Programme'
+                    url = "https://github.com/${githubOwner}"
+                }
+                developers {
+                    developer {
+                        id = 'telemedicine-platform'
+                        name = 'Telemedicine Platform Team'
+                    }
+                }
+                scm {
+                    url = "https://github.com/${githubOwner}/${githubRepo}"
+                    connection = "scm:git:https://github.com/${githubOwner}/${githubRepo}.git"
+                    developerConnection = "scm:git:ssh://git@github.com/${githubOwner}/${githubRepo}.git"
+                }
+            }
+        }
+    }
+    repositories {
+        // mavenLocal is always available via `publishToMavenLocal`; the remote repository is
+        // only declared when credentials exist so local builds never fail on a missing token.
+        if (packagesUser.isPresent() && packagesToken.isPresent()) {
+            maven {
+                name = 'GitHubPackages'
+                url = "https://maven.pkg.github.com/${githubOwner}/${githubRepo}"
+                credentials {
+                    username = packagesUser.get()
+                    password = packagesToken.get()
+                }
+            }
+        }
+    }
+}
+
+// Binary compatibility gate. Semver policy: patch = fix, minor = additive, major = breaking.
+// Only wired up once a baseline release exists to compare against.
+def baselineVersion = providers.gradleProperty('japicmpBaseline').orNull
+if (baselineVersion) {
+    pluginManager.apply('me.champeau.gradle.japicmp')
+
+    def baseline = configurations.detachedConfiguration(
+            dependencies.create("${project.group}:${project.name}:${baselineVersion}"))
+    baseline.transitive = false
+
+    def japicmpTask = tasks.register('japicmp', me.champeau.gradle.japicmp.JapicmpTask) {
+        description = "Verifies binary compatibility against ${baselineVersion}."
+        group = 'verification'
+        oldClasspath.from(baseline)
+        newClasspath.from(tasks.named('jar').map { it.archiveFile })
+        onlyBinaryIncompatibleModified = true
+        failOnModification = true
+        ignoreMissingClasses = true
+        htmlOutputFile = layout.buildDirectory.file('reports/japicmp/report.html').get().asFile
+    }
+
+    tasks.named('check') { dependsOn japicmpTask }
+}

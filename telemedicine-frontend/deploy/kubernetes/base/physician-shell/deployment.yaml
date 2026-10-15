@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: physician-shell
+  namespace: telemedicine-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: physician-shell
+  template:
+    metadata:
+      labels:
+        app: physician-shell
+    spec:
+      containers:
+        - name: physician-shell
+          image: telemedicine/physician-shell:0.1.0
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: physician-shell
+  namespace: telemedicine-frontend
+spec:
+  selector:
+    app: physician-shell
+  ports:
+    - port: 80
+      targetPort: 80

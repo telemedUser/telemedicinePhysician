@@ -1,0 +1,138 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../
+
+replicas:
+  - name: gateway
+    count: 1
+  - name: patient-bff
+    count: 1
+  - name: physician-bff
+    count: 1
+  - name: admin-bff
+    count: 1
+  - name: waiting-room-service
+    count: 1
+  - name: identity-service
+    count: 1
+  - name: video-service
+    count: 1
+  - name: integration-service
+    count: 1
+  - name: shell
+    count: 1
+  - name: physician-shell
+    count: 1
+  - name: admin-shell
+    count: 1
+
+images:
+  - name: telemedicine/gateway
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/patient-bff
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/physician-bff
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/admin-bff
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/waiting-room-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/identity-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/video-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/telemetry-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/clinical-docs-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/notification-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/integration-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/survey-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/reporting-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/monitoring-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/config-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/audit-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/scheduler-service
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/shell
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/physician-shell
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/admin-shell
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-patient-consent
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-patient-identity
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-patient-waiting-room
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-patient-consultation
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-patient-documents
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-patient-survey
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-physician-consultation
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-physician-documentation
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-physician-patient-context
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-admin-config
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-admin-dashboards
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-admin-audit
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-admin-access
+    newTag: dev-SNAPSHOT
+  - name: telemedicine/mfe-admin-monitoring
+    newTag: dev-SNAPSHOT
+
+patches:
+  - path: patches/env-config.yaml
+  - path: patches/ingress-hosts.yaml
+  - patch: |-
+      $patch: delete
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: gateway-hpa
+        namespace: telemedicine
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: kafka
+        namespace: telemedicine
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: postgres-primary
+        namespace: telemedicine
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: postgres-replica
+        namespace: telemedicine
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: redis
+        namespace: telemedicine

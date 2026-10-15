@@ -1,0 +1,2 @@
+*.sh text eol=lf
+infra/kafka/topics.txt text eol=lf

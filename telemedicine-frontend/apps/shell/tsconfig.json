@@ -1,0 +1,10 @@
+{
+  "extends": "../../packages/tsconfig-presets/react.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "paths": {
+      "@telemedicine/*": ["packages/*/src/index.ts", "packages/*/src/index.tsx"]
+    }
+  },
+  "include": ["src", "../../packages/shared-types/src"]
+}

@@ -1,0 +1,181 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: telemedicine-ingress
+  namespace: telemedicine
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/canary: "false"
+    nginx.ingress.kubernetes.io/canary-weight: "0"
+    telemedicine.io/deployment-color: blue
+    telemedicine.io/canary-weight: "0"
+spec:
+  ingressClassName: nginx
+  rules:
+    # Patient experience — shell + six patient MFE remotes
+    - host: app.example.com
+      http:
+        paths:
+          - path: /()(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: shell
+                port:
+                  number: 80
+          - path: /mfe/mfe-patient-consent(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-patient-consent
+                port:
+                  number: 80
+          - path: /mfe/mfe-patient-identity(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-patient-identity
+                port:
+                  number: 80
+          - path: /mfe/mfe-patient-waiting-room(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-patient-waiting-room
+                port:
+                  number: 80
+          - path: /mfe/mfe-patient-consultation(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-patient-consultation
+                port:
+                  number: 80
+          - path: /mfe/mfe-patient-documents(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-patient-documents
+                port:
+                  number: 80
+          - path: /mfe/mfe-patient-survey(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-patient-survey
+                port:
+                  number: 80
+    # Physician experience — shell + three physician MFE remotes
+    - host: physician.example.com
+      http:
+        paths:
+          - path: /()(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: physician-shell
+                port:
+                  number: 80
+          - path: /mfe/mfe-physician-consultation(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-physician-consultation
+                port:
+                  number: 80
+          - path: /mfe/mfe-physician-documentation(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-physician-documentation
+                port:
+                  number: 80
+          - path: /mfe/mfe-physician-patient-context(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-physician-patient-context
+                port:
+                  number: 80
+    # Administrator experience — shell + five admin MFE remotes
+    - host: admin.example.com
+      http:
+        paths:
+          - path: /()(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: admin-shell
+                port:
+                  number: 80
+          - path: /mfe/mfe-admin-config(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-admin-config
+                port:
+                  number: 80
+          - path: /mfe/mfe-admin-dashboards(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-admin-dashboards
+                port:
+                  number: 80
+          - path: /mfe/mfe-admin-audit(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-admin-audit
+                port:
+                  number: 80
+          - path: /mfe/mfe-admin-access(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-admin-access
+                port:
+                  number: 80
+          - path: /mfe/mfe-admin-monitoring(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-admin-monitoring
+                port:
+                  number: 80
+    # API gateway — single entry for BFFs and domain services
+    - host: api.example.com
+      http:
+        paths:
+          - path: /()(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway
+                port:
+                  number: 8080
+---
+# Blue/Green ingress for production canary — route 10% traffic to green gateway
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: telemedicine-ingress-green
+  namespace: telemedicine
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "10"
+    telemedicine.io/deployment-color: green
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.example.com
+      http:
+        paths:
+          - path: /()(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-green
+                port:
+                  number: 8080

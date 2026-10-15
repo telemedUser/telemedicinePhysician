@@ -1,0 +1,36 @@
+{
+  "name": "mfe-admin-access",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/mfe-admin-access/src",
+  "projectType": "application",
+  "tags": [
+    "scope:app",
+    "type:mfe"
+  ],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/mfe-admin-access"
+      ],
+      "options": {
+        "command": "vite build",
+        "cwd": "apps/mfe-admin-access"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite",
+        "cwd": "apps/mfe-admin-access"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite preview",
+        "cwd": "apps/mfe-admin-access"
+      }
+    }
+  }
+}

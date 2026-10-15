@@ -1,0 +1,48 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: video-service
+  namespace: telemedicine-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: video-service
+  template:
+    metadata:
+      labels:
+        app: video-service
+    spec:
+      containers:
+        - name: video-service
+          image: telemedicine/video-service:0.1.0
+          ports:
+            - containerPort: 8103
+          envFrom:
+            - configMapRef:
+                name: telemedicine-backend-config
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8103
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8103
+            initialDelaySeconds: 60
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: video-service
+  namespace: telemedicine-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: video-service
+  ports:
+    - port: 8103
+      targetPort: 8103

@@ -1,0 +1,6 @@
+{
+  "name": "@telemedicine/mfe",
+  "version": "0.1.0",
+  "private": true,
+  "generators": "./generators.json"
+}

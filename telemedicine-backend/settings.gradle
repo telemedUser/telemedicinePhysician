@@ -1,0 +1,72 @@
+pluginManagement {
+    includeBuild('build-logic')
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'telemedicine-backend'
+
+// Gateway
+include 'gateway'
+
+// Shared libraries
+include 'java-common-bom'
+include 'java-common-core'
+include 'java-common-web'
+include 'java-common-security'
+include 'java-common-events'
+include 'java-common-observability'
+include 'java-common-persistence'
+include 'java-common-integration'
+include 'java-common-audit'
+include 'java-common-mock-data'
+include 'java-common-testing'
+
+project(':java-common-bom').projectDir = file('shared/java-common-bom')
+project(':java-common-mock-data').projectDir = file('shared/java-common-mock-data')
+
+project(':java-common-core').projectDir = file('shared/java-common-core')
+project(':java-common-web').projectDir = file('shared/java-common-web')
+project(':java-common-security').projectDir = file('shared/java-common-security')
+project(':java-common-events').projectDir = file('shared/java-common-events')
+project(':java-common-observability').projectDir = file('shared/java-common-observability')
+project(':java-common-persistence').projectDir = file('shared/java-common-persistence')
+project(':java-common-integration').projectDir = file('shared/java-common-integration')
+project(':java-common-audit').projectDir = file('shared/java-common-audit')
+project(':java-common-testing').projectDir = file('shared/java-common-testing')
+
+// BFFs
+include 'patient-bff', 'physician-bff', 'admin-bff'
+project(':patient-bff').projectDir = file('bff/patient-bff')
+project(':physician-bff').projectDir = file('bff/physician-bff')
+project(':admin-bff').projectDir = file('bff/admin-bff')
+
+// Platform services
+include 'config-service', 'scheduler-service', 'audit-service'
+project(':config-service').projectDir = file('platform/config-service')
+project(':scheduler-service').projectDir = file('platform/scheduler-service')
+project(':audit-service').projectDir = file('platform/audit-service')
+
+// Domain services
+include 'waiting-room-service', 'identity-service', 'video-service', 'telemetry-service'
+include 'clinical-docs-service', 'notification-service', 'integration-service'
+include 'survey-service', 'reporting-service', 'monitoring-service'
+include 'physician-service'
+project(':waiting-room-service').projectDir = file('services/waiting-room-service')
+project(':identity-service').projectDir = file('services/identity-service')
+project(':video-service').projectDir = file('services/video-service')
+project(':telemetry-service').projectDir = file('services/telemetry-service')
+project(':clinical-docs-service').projectDir = file('services/clinical-docs-service')
+project(':notification-service').projectDir = file('services/notification-service')
+project(':integration-service').projectDir = file('services/integration-service')
+project(':survey-service').projectDir = file('services/survey-service')
+project(':reporting-service').projectDir = file('services/reporting-service')
+project(':monitoring-service').projectDir = file('services/monitoring-service')
+project(':physician-service').projectDir = file('services/physician-service')
+
+// Templates & simulators
+include 'template-java', 'external-simulators'
+project(':template-java').projectDir = file('services/_template-java')
+project(':external-simulators').projectDir = file('simulators/external-simulators')

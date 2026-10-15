@@ -1,0 +1,18 @@
+# DEPRECATED — use canonical docker-compose.yml with profiles instead.
+#
+# Phase 0 (infra + gateway + simulators):
+#   COMPOSE_PROFILES=infra,observability,sim,edge
+#   docker compose up -d --build
+#
+# Full stack with demo apps:
+#   COMPOSE_PROFILES=infra,observability,sim,edge,apps
+#   docker compose up -d --build
+#
+# This file intentionally declares no services to avoid port collisions.
+
+services: {}
+
+networks:
+  default:
+    name: telemedicine
+    external: true

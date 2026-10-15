@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telemedicine-backend-config
+  namespace: telemedicine-backend
+data:
+  CONSUL_HOST: consul
+  CONSUL_PORT: "8500"
+  SPRING_PROFILES_ACTIVE: kubernetes
+  KAFKA_BOOTSTRAP: kafka:9092
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  KEYCLOAK_JWK_URI: http://keycloak:8080/realms/telemedicine/protocol/openid-connect/certs
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317

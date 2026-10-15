@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/StatusChanged/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "fromStatus",
+    "toStatus",
+    "actorRef",
+    "changedAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "fromStatus": {
+      "type": "string"
+    },
+    "toStatus": {
+      "type": "string"
+    },
+    "actorRef": {
+      "type": "string"
+    },
+    "changedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

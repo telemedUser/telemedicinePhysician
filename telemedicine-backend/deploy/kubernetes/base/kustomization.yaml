@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: telemedicine-backend
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - consul/deployment.yaml
+  - gateway/deployment.yaml
+  - template-java/deployment.yaml
+  - template-python/deployment.yaml
+  - config-service/deployment.yaml
+  - audit-service/deployment.yaml
+  - scheduler-service/deployment.yaml
+  - patient-bff/deployment.yaml
+  - physician-bff/deployment.yaml
+  - admin-bff/deployment.yaml
+  - waiting-room-service/deployment.yaml
+  - identity-service/deployment.yaml
+  - video-service/deployment.yaml
+  - telemetry-service/deployment.yaml
+  - clinical-docs-service/deployment.yaml
+  - notification-service/deployment.yaml
+  - integration-service/deployment.yaml
+  - survey-service/deployment.yaml
+  - reporting-service/deployment.yaml
+  - monitoring-service/deployment.yaml

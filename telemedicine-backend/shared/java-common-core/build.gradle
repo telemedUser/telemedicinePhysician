@@ -1,0 +1,14 @@
+plugins {
+    id 'telemedicine.java-library-conventions'
+    id 'telemedicine.quality-conventions'
+    id 'telemedicine.publishing-conventions'
+}
+
+description = 'Framework-free foundation: API envelopes, RFC 9457 problem details, error catalogue, IDs, time and PHI redaction.'
+
+dependencies {
+    api 'com.fasterxml.jackson.core:jackson-annotations'
+    api 'com.fasterxml.jackson.core:jackson-databind'
+
+    testImplementation libs.archunit.junit5
+}

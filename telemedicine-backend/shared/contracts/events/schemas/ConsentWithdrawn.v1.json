@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/ConsentWithdrawn/1.0",
+  "type": "object",
+  "required": [
+    "consentId",
+    "subjectRef",
+    "consentType",
+    "withdrawnAt"
+  ],
+  "properties": {
+    "consentId": {
+      "type": "string"
+    },
+    "subjectRef": {
+      "type": "string"
+    },
+    "consentType": {
+      "type": "string"
+    },
+    "withdrawnAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,79 @@
+openapi: 3.1.0
+info:
+  title: Config Service API
+  version: 1.0.0
+paths:
+  /api/v1/config:
+    get:
+      summary: Platform configuration snapshot
+      responses:
+        '200':
+          description: Typed configuration snapshot
+  /api/v1/config/{key}:
+    get:
+      summary: Single configuration entry
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Configuration entry
+        '404':
+          description: Unknown key
+    put:
+      summary: Update configuration entry (admin)
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated entry
+  /api/v1/config/{key}/history:
+    get:
+      summary: Paginated revision history
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: size
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Revision page
+  /api/v1/config/flags/{flagKey}:
+    get:
+      summary: Read feature flag
+      parameters:
+        - name: flagKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Feature flag
+    put:
+      summary: Update feature flag (admin)
+      parameters:
+        - name: flagKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated flag

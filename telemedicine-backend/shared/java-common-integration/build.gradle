@@ -1,0 +1,29 @@
+plugins {
+    id 'telemedicine.java-library-conventions'
+    id 'telemedicine.quality-conventions'
+    id 'telemedicine.spring-library-conventions'
+    id 'telemedicine.publishing-conventions'
+}
+
+description = 'External system adapters, provider selection, resilience defaults and HTTP client factories.'
+
+dependencies {
+    api project(':java-common-core')
+    api project(':java-common-events')
+    api libs.spring.boot.starter.web
+    api libs.spring.boot.starter.webflux
+    api libs.resilience4j.spring.boot3
+    api libs.resilience4j.reactor
+    api libs.caffeine
+
+    compileOnly project(':java-common-observability')
+    compileOnly project(':java-common-security')
+
+    implementation libs.spring.boot.autoconfigure
+    implementation libs.jackson.databind
+
+    testImplementation project(':java-common-observability')
+    testImplementation project(':java-common-security')
+    testImplementation libs.wiremock.standalone
+    testImplementation libs.awaitility
+}

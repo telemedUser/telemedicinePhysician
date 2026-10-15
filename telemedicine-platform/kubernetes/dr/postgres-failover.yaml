@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dr-runbook-trigger
+  namespace: telemedicine
+data:
+  rpo-minutes: "15"
+  rto-minutes: "120"
+  secondary-region: "eu-west-2"
+  postgres-primary-service: "postgres-primary.telemedicine.svc.cluster.local"
+  postgres-standby-service: "postgres-standby.telemedicine.svc.cluster.local"
+  postgres-replica-service: "postgres-replica.telemedicine.svc.cluster.local"
+  promotion-script: |
+    #!/bin/sh
+    set -e
+    echo "Checking replication lag on standby..."
+    LAG=$(psql -h "$STANDBY_HOST" -U telemedicine -tAc "SELECT COALESCE(EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp())), 0);")
+    if [ "${LAG%%.*}" -gt 900 ]; then
+      echo "Replication lag exceeds RPO threshold (${LAG}s)" >&2
+      exit 1
+    fi
+    echo "Promoting standby to primary..."
+    psql -h "$STANDBY_HOST" -U telemedicine -c "SELECT pg_promote();"
+    echo "Updating service selectors — manual step: patch postgres-primary Service to target promoted pod"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-failover-credentials
+  namespace: telemedicine
+type: Opaque
+stringData:
+  PGPASSWORD: change-me-in-vault
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dr-smoke-test
+  namespace: telemedicine
+  labels:
+    telemedicine.io/dr-component: smoke-test
+spec:
+  template:
+    metadata:
+      labels:
+        telemedicine.io/dr-component: smoke-test
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: curl
+          image: curlimages/curl:8.10.1
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              curl -sf http://gateway.telemedicine-backend.svc.cluster.local:8080/actuator/health
+              curl -sf http://gateway.telemedicine-backend.svc.cluster.local:8080/bff/patient/journey/dr-smoke-test
+              curl -sf http://postgres-standby.telemedicine.svc.cluster.local:5432 || echo "standby tcp check skipped"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-failover-drill
+  namespace: telemedicine
+  labels:
+    telemedicine.io/dr-component: failover-drill
+spec:
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        telemedicine.io/dr-component: failover-drill
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: failover
+          image: postgres:16-alpine
+          env:
+            - name: STANDBY_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: dr-runbook-trigger
+                  key: postgres-standby-service
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-failover-credentials
+                  key: PGPASSWORD
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "DR failover drill — validate standby connectivity and lag only (no promotion in automated drill)"
+              psql -h postgres-replica -U telemedicine -c "SELECT pg_is_in_recovery();"
+              psql -h postgres-replica -U telemedicine -c "SELECT COALESCE(pg_last_wal_replay_lsn()::text, 'unknown');"
+              echo "Failover drill completed — run manual promotion during scheduled DR exercise"

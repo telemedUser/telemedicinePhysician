@@ -1,0 +1,36 @@
+{
+  "name": "mfe-admin-monitoring",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/mfe-admin-monitoring/src",
+  "projectType": "application",
+  "tags": [
+    "scope:app",
+    "type:mfe"
+  ],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/mfe-admin-monitoring"
+      ],
+      "options": {
+        "command": "vite build",
+        "cwd": "apps/mfe-admin-monitoring"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite",
+        "cwd": "apps/mfe-admin-monitoring"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite preview",
+        "cwd": "apps/mfe-admin-monitoring"
+      }
+    }
+  }
+}

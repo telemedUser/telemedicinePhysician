@@ -1,0 +1,30 @@
+plugins {
+    id 'telemedicine.java-library-conventions'
+    id 'telemedicine.quality-conventions'
+    id 'telemedicine.spring-library-conventions'
+    id 'telemedicine.publishing-conventions'
+}
+
+description = 'Tamper-evident audit events, @Audited aspect and consent ledger helpers.'
+
+dependencies {
+    api project(':java-common-core')
+    api project(':java-common-events')
+    api project(':java-common-security')
+    api project(':java-common-persistence')
+    api 'org.springframework.boot:spring-boot-starter-aop'
+
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    compileOnly 'org.springframework:spring-context'
+    compileOnly 'org.springframework:spring-web'
+    compileOnly libs.jakarta.servlet.api
+    compileOnly 'io.micrometer:micrometer-core'
+
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+    implementation 'org.springframework:spring-context'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'io.micrometer:micrometer-core'
+}

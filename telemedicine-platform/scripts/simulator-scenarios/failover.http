@@ -1,0 +1,33 @@
+@baseUrl = http://localhost:8200
+
+### Enable Vonage outage
+POST {{baseUrl}}/sim/vonage/outage
+Content-Type: application/json
+
+{
+  "enabled": true
+}
+
+### Vonage session should fail
+POST {{baseUrl}}/sim/vonage/session
+Content-Type: application/json
+
+{
+  "appointmentId": "apt-failover-001"
+}
+
+### ACS session should succeed
+POST {{baseUrl}}/sim/acs/session
+Content-Type: application/json
+
+{
+  "appointmentId": "apt-failover-001"
+}
+
+### Restore Vonage
+POST {{baseUrl}}/sim/vonage/outage
+Content-Type: application/json
+
+{
+  "enabled": false
+}

@@ -1,0 +1,31 @@
+openapi: 3.0.3
+info:
+  title: Shared Error Response
+  version: 0.1.0
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          nullable: true
+        message:
+          type: string
+          nullable: true
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Resource not found

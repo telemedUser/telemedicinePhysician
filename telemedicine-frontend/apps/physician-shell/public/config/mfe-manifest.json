@@ -1,0 +1,35 @@
+{
+  "shellVersion": "1.0.0",
+  "remotes": [
+    {
+      "name": "mfePhysicianConsultation",
+      "url": "http://localhost:3011/assets/remoteEntry.js",
+      "route": "/physician/consultation",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["PHYSICIAN"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    },
+    {
+      "name": "mfePhysicianDocumentation",
+      "url": "http://localhost:3012/assets/remoteEntry.js",
+      "route": "/physician/documentation",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["PHYSICIAN"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    },
+    {
+      "name": "mfePhysicianPatientContext",
+      "url": "http://localhost:3013/assets/remoteEntry.js",
+      "route": "/physician/patient-context",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["PHYSICIAN"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "physician-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone physician web application (worklist, patient context, consultation workspace, documentation, provider management). Video conferencing is out of scope.",
+  "dependencies": {
+    "@telemedicine/api-client": "workspace:*",
+    "@telemedicine/auth": "workspace:*",
+    "@telemedicine/chat-adapter": "workspace:*",
+    "@telemedicine/design-system": "workspace:*",
+    "@telemedicine/feature-flags": "workspace:*",
+    "@telemedicine/i18n": "workspace:*",
+    "@telemedicine/observability-web": "workspace:*",
+    "@telemedicine/session-context": "workspace:*",
+    "@telemedicine/shared-types": "workspace:*",
+    "@telemedicine/telemetry-adapter": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  }
+}

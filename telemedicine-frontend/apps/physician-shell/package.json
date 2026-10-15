@@ -1,0 +1,19 @@
+{
+  "name": "physician-shell",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@telemedicine/api-client": "workspace:*",
+    "@telemedicine/auth": "workspace:*",
+    "@telemedicine/design-system": "workspace:*",
+    "@telemedicine/feature-flags": "workspace:*",
+    "@telemedicine/i18n": "workspace:*",
+    "@telemedicine/mfe-registry": "workspace:*",
+    "@telemedicine/observability-web": "workspace:*",
+    "@telemedicine/session-context": "workspace:*",
+    "@telemedicine/shared-types": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  }
+}

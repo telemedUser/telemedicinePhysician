@@ -1,0 +1,25 @@
+plugins {
+    id 'telemedicine.java-library-conventions'
+    id 'telemedicine.quality-conventions'
+    id 'telemedicine.spring-library-conventions'
+    id 'telemedicine.publishing-conventions'
+}
+
+description = 'Domain event catalogue, Kafka publishing and idempotent consumption defaults.'
+
+dependencies {
+    api project(':java-common-core')
+    api 'org.springframework.kafka:spring-kafka'
+    api libs.jackson.databind
+    api libs.jackson.datatype.jsr310
+    api libs.jakarta.persistence.api
+
+    compileOnly 'org.hibernate.orm:hibernate-core'
+
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    testImplementation libs.spring.kafka.test
+    testImplementation libs.testcontainers.junit.jupiter
+    testImplementation libs.testcontainers.kafka
+    testImplementation libs.awaitility
+}

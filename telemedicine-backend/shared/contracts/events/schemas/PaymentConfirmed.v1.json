@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/PaymentConfirmed/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "paymentId",
+    "amountMinor",
+    "currency",
+    "method",
+    "confirmedAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "paymentId": {
+      "type": "string"
+    },
+    "amountMinor": {
+      "type": "integer"
+    },
+    "currency": {
+      "type": "string"
+    },
+    "method": {
+      "type": "string"
+    },
+    "confirmedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

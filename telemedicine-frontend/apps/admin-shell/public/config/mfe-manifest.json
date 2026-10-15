@@ -1,0 +1,55 @@
+{
+  "shellVersion": "1.0.0",
+  "remotes": [
+    {
+      "name": "mfeAdminConfig",
+      "url": "http://localhost:3021/assets/remoteEntry.js",
+      "route": "/admin/config",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["ADMIN"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    },
+    {
+      "name": "mfeAdminDashboards",
+      "url": "http://localhost:3022/assets/remoteEntry.js",
+      "route": "/admin/dashboards",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["ADMIN"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    },
+    {
+      "name": "mfeAdminAudit",
+      "url": "http://localhost:3023/assets/remoteEntry.js",
+      "route": "/admin/audit",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["ADMIN"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    },
+    {
+      "name": "mfeAdminAccess",
+      "url": "http://localhost:3024/assets/remoteEntry.js",
+      "route": "/admin/access",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["ADMIN"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    },
+    {
+      "name": "mfeAdminMonitoring",
+      "url": "http://localhost:3025/assets/remoteEntry.js",
+      "route": "/admin/monitoring",
+      "enabled": true,
+      "module": "./App",
+      "roles": ["ADMIN"],
+      "version": "1.0.0",
+      "minShellVersion": "1.0.0"
+    }
+  ]
+}

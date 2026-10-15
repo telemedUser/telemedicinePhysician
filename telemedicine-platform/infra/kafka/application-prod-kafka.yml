@@ -1,0 +1,32 @@
+# Spring Boot production Kafka profile — mount as ConfigMap or spring.config.import.
+# TLS certificates are expected at /etc/kafka/tls/ (mounted from Kubernetes Secret).
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka-0.kafka.telemedicine.svc:9093,kafka-1.kafka.telemedicine.svc:9093,kafka-2.kafka.telemedicine.svc:9093}
+    security:
+      protocol: SSL
+    ssl:
+      trust-store-location: file:/etc/kafka/tls/truststore.jks
+      trust-store-password: ${KAFKA_TRUSTSTORE_PASSWORD}
+      key-store-location: file:/etc/kafka/tls/keystore.jks
+      key-store-password: ${KAFKA_KEYSTORE_PASSWORD}
+      key-password: ${KAFKA_KEY_PASSWORD}
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        ssl.endpoint.identification.algorithm: HTTPS
+    consumer:
+      properties:
+        ssl.endpoint.identification.algorithm: HTTPS
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
+
+telemedicine:
+  events:
+    outbox:
+      poll-interval-ms: 1000
+      batch-size: 100

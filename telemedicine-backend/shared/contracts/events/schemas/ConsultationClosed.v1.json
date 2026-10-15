@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/ConsultationClosed/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "outcome",
+    "durationSeconds",
+    "closedAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string"
+    },
+    "durationSeconds": {
+      "type": "integer"
+    },
+    "closedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,35 @@
+openapi: 3.1.0
+info:
+  title: Physician BFF API
+  version: 1.0.0
+paths:
+  /bff/physician/worklist:
+    get:
+      summary: Physician consultation worklist
+      responses:
+        '200':
+          description: Worklist entries
+  /bff/physician/consultation/{appointmentId}:
+    get:
+      summary: Consultation join payloads and patient context
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Consultation context
+  /bff/physician/documentation/{appointmentId}:
+    post:
+      summary: Submit clinical documentation
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Documentation issued

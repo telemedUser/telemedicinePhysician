@@ -1,0 +1,84 @@
+# Daily logical backup — pg_dump streamed to MinIO (S3-compatible).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-backup-credentials
+  namespace: telemedicine
+type: Opaque
+stringData:
+  PGPASSWORD: change-me-in-vault
+  MINIO_ACCESS_KEY: change-me-in-vault
+  MINIO_SECRET_KEY: change-me-in-vault
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-backup-config
+  namespace: telemedicine
+data:
+  POSTGRES_HOST: postgres-primary
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: telemedicine
+  POSTGRES_DB: telemedicine
+  MINIO_ENDPOINT: http://minio.telemedicine.svc.cluster.local:9000
+  MINIO_BUCKET: telemedicine-backups
+  BACKUP_PREFIX: postgres/daily
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup-daily
+  namespace: telemedicine
+  labels:
+    telemedicine.io/dr-component: backup
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 259200
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            telemedicine.io/dr-component: backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-dump-minio
+              image: minio/mc:RELEASE.2024-09-22T00-33-43Z
+              envFrom:
+                - configMapRef:
+                    name: postgres-backup-config
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-backup-credentials
+                      key: PGPASSWORD
+                - name: MINIO_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-backup-credentials
+                      key: MINIO_ACCESS_KEY
+                - name: MINIO_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-backup-credentials
+                      key: MINIO_SECRET_KEY
+              command:
+                - sh
+                - -c
+                - |
+                  set -e
+                  apk add --no-cache postgresql16-client >/dev/null 2>&1 || true
+                  STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+                  DUMP_FILE="/tmp/telemedicine-${STAMP}.sql.gz"
+                  echo "Starting pg_dump to ${DUMP_FILE}"
+                  pg_dump -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip > "$DUMP_FILE"
+                  mc alias set backup "$MINIO_ENDPOINT" "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+                  mc mb --ignore-existing "backup/${MINIO_BUCKET}"
+                  mc cp "$DUMP_FILE" "backup/${MINIO_BUCKET}/${BACKUP_PREFIX}/telemedicine-${STAMP}.sql.gz"
+                  echo "Backup uploaded to s3://${MINIO_BUCKET}/${BACKUP_PREFIX}/telemedicine-${STAMP}.sql.gz"

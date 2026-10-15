@@ -1,0 +1,15 @@
+# Mock profile — connects to external datastore/seeds/ (no PostgreSQL).
+# Delete this file when switching to Postgres (see datastore/DELETION.md).
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+
+telemedicine:
+  datastore:
+    # Points at telemedicine/datastore/seeds/ (sibling of telemedicine-backend)
+    root: ${TELEMEDICINE_DATASTORE_ROOT:file:../datastore/seeds}
+    writable: true

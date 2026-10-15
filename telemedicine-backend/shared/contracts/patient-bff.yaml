@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: Patient BFF API
+  version: 1.0.0
+paths:
+  /bff/patient/journey/{appointmentId}:
+    get:
+      summary: Aggregated patient journey state
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Journey snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      appointmentId:
+                        type: string
+                      overallStatus:
+                        type: string
+                        enum: [OK, DEGRADED]
+                      consent:
+                        type: object
+                      identity:
+                        type: object
+                      waitingRoom:
+                        type: object
+                      video:
+                        type: object
+                      documents:
+                        type: object
+                      survey:
+                        type: object

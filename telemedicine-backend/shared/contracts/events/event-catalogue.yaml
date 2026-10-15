@@ -1,0 +1,85 @@
+events:
+  - type: AppointmentCreated
+    version: "1.0"
+    producer: integration-service
+  - type: AppointmentRescheduled
+    version: "1.0"
+    producer: integration-service
+  - type: PaymentConfirmed
+    version: "1.0"
+    producer: integration-service
+  - type: LinkGenerated
+    version: "1.0"
+    producer: waiting-room-service
+  - type: ConsentGranted
+    version: "1.0"
+    producer: waiting-room-service
+  - type: ConsentWithdrawn
+    version: "1.0"
+    producer: waiting-room-service
+  - type: IdentityValidated
+    version: "1.0"
+    producer: identity-service
+  - type: IdentityValidationFailed
+    version: "1.0"
+    producer: identity-service
+  - type: DeviceTestCompleted
+    version: "1.0"
+    producer: waiting-room-service
+  - type: PatientEnteredWaitingRoom
+    version: "1.0"
+    producer: waiting-room-service
+  - type: StatusChanged
+    version: "1.0"
+    producer: waiting-room-service
+  - type: VideoSessionCreated
+    version: "1.0"
+    producer: video-service
+  - type: VideoSessionStarted
+    version: "1.0"
+    producer: video-service
+  - type: VideoSessionEnded
+    version: "1.0"
+    producer: video-service
+  - type: ChatMessageSent
+    version: "1.0"
+    producer: video-service
+  - type: TelemetryMeasured
+    version: "1.0"
+    producer: telemetry-service
+  - type: ConnectionQualityDegraded
+    version: "1.0"
+    producer: monitoring-service
+  - type: ClinicalDocumentIssued
+    version: "1.0"
+    producer: clinical-docs-service
+  - type: PrescriptionIssued
+    version: "1.0"
+    producer: clinical-docs-service
+  - type: MedicalLeaveIssued
+    version: "1.0"
+    producer: clinical-docs-service
+  - type: ConsultationClosed
+    version: "1.0"
+    producer: integration-service
+  - type: SurveyRequested
+    version: "1.0"
+    producer: survey-service
+  - type: SurveyCompleted
+    version: "1.0"
+    producer: survey-service
+  - type: NotificationSent
+    version: "1.0"
+    producer: notification-service
+  - type: NotificationFailed
+    version: "1.0"
+    producer: notification-service
+  - type: IntegrationFailed
+    version: "1.0"
+    producer: integration-service
+  - type: ConfigurationChanged
+    version: "1.0"
+    producer: config-service
+  - type: AuditRecorded
+    version: "1.0"
+    producer: audit-service

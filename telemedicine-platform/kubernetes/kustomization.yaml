@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: telemedicine
+
+# Base stack for all environments. Deploy with:
+#   kubectl apply -k overlays/dev
+#   kubectl apply -k overlays/staging
+#   kubectl apply -k overlays/prod
+#
+# This root kustomization is the shared base referenced by overlays/*.
+
+resources:
+  - namespaces/telemedicine.yaml
+  - ../../telemedicine-backend/deploy/kubernetes/base
+  - ../../telemedicine-frontend/deploy/kubernetes/base
+  - ingress/ingress.yaml
+  - ha/gateway-ha.yaml
+  - ha/bff-ha.yaml
+  - ha/domain-ha.yaml
+  - ha/kafka-ha.yaml
+  - ha/postgres-ha.yaml
+  - ha/redis-ha.yaml
+  - dr/postgres-failover.yaml
+  - dr/dr-exercise.yaml
+  - dr/backup-cronjob.yaml
+  - security/network-policies.yaml
+
+# Environment-specific replicas, image tags, and env patches live under overlays/.
+# See overlays/dev, overlays/staging, overlays/prod.

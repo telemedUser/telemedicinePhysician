@@ -1,0 +1,108 @@
+plugins {
+    id 'java-library'
+    id 'io.spring.dependency-management'
+}
+
+group = 'com.telemedicine'
+version = providers.gradleProperty('sharedLibsVersion').getOrElse('1.0.0-SNAPSHOT')
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${providers.gradleProperty('springBootVersion').getOrElse('3.3.5')}"
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${providers.gradleProperty('springCloudVersion').getOrElse('2023.0.3')}"
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += [
+            // Spring resolves @RequestParam, @PathVariable and constructor-bound
+            // @ConfigurationProperties by parameter name. The Spring Boot plugin adds this flag
+            // for applications; libraries do not apply that plugin, so it is set explicitly here.
+            '-parameters',
+            '-Xlint:all',
+            // `processing` fires for the Spring configuration processor, `serial` for every
+            // exception type, and `this-escape` for any constructor that registers a callback.
+            // None of the three indicate a defect in this codebase.
+            '-Xlint:-processing',
+            '-Xlint:-serial',
+            '-Xlint:-this-escape'
+    ]
+}
+
+// Warnings are fatal in published code, where a raw type or an unchecked cast becomes someone
+// else's runtime failure. Tests are exempt: they exercise third-party APIs such as swagger-models
+// and the Kafka test harness, whose own raw types would otherwise have to be suppressed line by
+// line for no gain in safety.
+tasks.named('compileJava') {
+    options.compilerArgs += '-Werror'
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+    // Javadoc completeness is enforced by review, not by failing the build on missing tags.
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+// Container-backed tests live in their own source set so `./gradlew test` stays fast.
+sourceSets {
+    integrationTest {
+        compileClasspath += sourceSets.main.output + sourceSets.test.output
+        runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs Testcontainers-backed integration tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    shouldRunAfter tasks.named('test')
+    useJUnitPlatform()
+}
+
+// Several contract tests assert that a library agrees with a Phase 0 artefact — the Keycloak
+// realm, the Kafka topic list — which live in the sibling telemedicine-platform tree. The location
+// is passed in rather than discovered with a relative path walk, so a test failure says "the
+// contract diverged" instead of "the file moved".
+def platformDirectory = rootProject.layout.projectDirectory.dir('../telemedicine-platform')
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    systemProperty 'telemedicine.platform.dir', platformDirectory.asFile.absolutePath
+    systemProperty 'telemedicine.contracts.dir',
+            rootProject.layout.projectDirectory.dir('shared/contracts').asFile.absolutePath
+    testLogging {
+        events 'failed'
+        exceptionFormat = 'full'
+        showStackTraces = true
+    }
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.assertj:assertj-core'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

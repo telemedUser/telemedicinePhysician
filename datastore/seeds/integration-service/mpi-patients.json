@@ -1,0 +1,20 @@
+[
+  {
+    "appointmentId": "apt-001",
+    "patientId": "pat-001",
+    "name": "Maria Gonzalez",
+    "dateOfBirth": "1985-03-15"
+  },
+  {
+    "appointmentId": "apt-002",
+    "patientId": "pat-002",
+    "name": "Carlos Ruiz",
+    "dateOfBirth": "1990-07-22"
+  },
+  {
+    "appointmentId": "apt-demo",
+    "patientId": "pat-demo",
+    "name": "Demo Patient",
+    "dateOfBirth": "1995-01-01"
+  }
+]

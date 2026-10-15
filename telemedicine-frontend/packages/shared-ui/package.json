@@ -1,0 +1,14 @@
+{
+  "name": "@telemedicine/shared-ui",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "scripts": {
+    "lint": "eslint src --ext .tsx"
+  },
+  "dependencies": {
+    "@telemedicine/design-system": "workspace:*",
+    "react": "^18.3.1"
+  }
+}

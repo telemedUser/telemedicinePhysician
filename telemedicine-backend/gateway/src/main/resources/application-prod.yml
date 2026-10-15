@@ -1,0 +1,22 @@
+telemedicine:
+  security:
+    mode: JWT
+  gateway:
+    rate-limit:
+      replenish-rate: 600
+      burst-capacity: 1200
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8180/realms/telemedicine/protocol/openid-connect/certs}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s

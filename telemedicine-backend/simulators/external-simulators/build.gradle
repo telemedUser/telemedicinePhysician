@@ -1,0 +1,21 @@
+plugins {
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+}
+
+dependencies {
+    implementation project(':java-common-core')
+    implementation project(':java-common-web')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.cloud:spring-cloud-starter-consul-discovery'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+bootJar { archiveFileName = 'external-simulators.jar' }
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

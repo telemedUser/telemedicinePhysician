@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/AuditRecorded/1.0",
+  "type": "object",
+  "required": [
+    "auditId",
+    "actorRef",
+    "action",
+    "resourceType",
+    "resourceRef",
+    "outcome",
+    "previousHash",
+    "hash",
+    "occurredAt"
+  ],
+  "properties": {
+    "auditId": {
+      "type": "string"
+    },
+    "actorRef": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string"
+    },
+    "resourceType": {
+      "type": "string"
+    },
+    "resourceRef": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string"
+    },
+    "previousHash": {
+      "type": "string"
+    },
+    "hash": {
+      "type": "string"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

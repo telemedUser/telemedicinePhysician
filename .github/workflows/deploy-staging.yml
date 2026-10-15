@@ -1,0 +1,58 @@
+name: Deploy Staging
+
+on:
+  workflow_run:
+    workflows: [Backend CI, Frontend CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag to deploy
+        required: false
+        default: staging
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success')
+    steps:
+      - run: echo "Staging deploy gate passed"
+
+  deploy:
+    needs: gate
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > ~/.kube/config
+      - name: Set image tag overlay
+        working-directory: telemedicine-platform/kubernetes/overlays/staging
+        run: |
+          TAG="${{ github.event.inputs.image_tag || 'staging' }}"
+          kustomize edit set image \
+            telemedicine/gateway=telemedicine/gateway:$TAG \
+            telemedicine/patient-bff=telemedicine/patient-bff:$TAG \
+            telemedicine/shell=telemedicine/shell:$TAG
+      - name: Apply staging overlay
+        run: |
+          kubectl apply -k telemedicine-platform/kubernetes/overlays/staging
+      - name: Wait for gateway rollout
+        run: |
+          kubectl rollout status deployment/gateway -n telemedicine-backend --timeout=300s
+          kubectl rollout status deployment/shell -n telemedicine-frontend --timeout=300s
+      - name: Smoke test
+        run: |
+          curl -sf --retry 5 --retry-delay 10 \
+            https://api.staging.example.com/actuator/health

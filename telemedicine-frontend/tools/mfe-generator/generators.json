@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "app": {
+      "factory": "./src/generators/app/generator.js",
+      "schema": "./src/generators/app/schema.json",
+      "description": "Scaffold a new microfrontend from template"
+    }
+  }
+}

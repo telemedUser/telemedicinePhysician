@@ -1,0 +1,247 @@
+# Network policies for production telemedicine namespace.
+# Requires a CNI that enforces NetworkPolicy (Calico, Cilium, etc.).
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateway-ingress-egress
+  namespace: telemedicine
+spec:
+  podSelector:
+    matchLabels:
+      app: gateway
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              tier: bff
+      ports:
+        - protocol: TCP
+          port: 8090
+        - protocol: TCP
+          port: 8091
+        - protocol: TCP
+          port: 8092
+    - to:
+        - podSelector:
+            matchLabels:
+              tier: domain
+      ports:
+        - protocol: TCP
+          port: 8101
+        - protocol: TCP
+          port: 8110
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - podSelector:
+            matchLabels:
+              app: keycloak
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
+        - podSelector:
+            matchLabels:
+              app: consul
+      ports:
+        - protocol: TCP
+          port: 8500
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bff-from-gateway-only
+  namespace: telemedicine
+spec:
+  podSelector:
+    matchLabels:
+      tier: bff
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: gateway
+      ports:
+        - protocol: TCP
+          port: 8090
+        - protocol: TCP
+          port: 8091
+        - protocol: TCP
+          port: 8092
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              tier: domain
+      ports:
+        - protocol: TCP
+          port: 8101
+        - protocol: TCP
+          port: 8110
+    - to:
+        - podSelector:
+            matchLabels:
+              app: consul
+      ports:
+        - protocol: TCP
+          port: 8500
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: domain-services-policy
+  namespace: telemedicine
+spec:
+  podSelector:
+    matchLabels:
+      tier: domain
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: gateway
+        - podSelector:
+            matchLabels:
+              tier: bff
+      ports:
+        - protocol: TCP
+          port: 8101
+        - protocol: TCP
+          port: 8110
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              tier: infra
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 9092
+        - protocol: TCP
+          port: 9000
+    - to:
+        - podSelector:
+            matchLabels:
+              tier: domain
+      ports:
+        - protocol: TCP
+          port: 8101
+        - protocol: TCP
+          port: 8110
+    - to:
+        - podSelector:
+            matchLabels:
+              app: consul
+      ports:
+        - protocol: TCP
+          port: 8500
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: infra-data-plane
+  namespace: telemedicine
+spec:
+  podSelector:
+    matchLabels:
+      tier: infra
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              tier: domain
+        - podSelector:
+            matchLabels:
+              tier: platform
+        - podSelector:
+            matchLabels:
+              app: gateway
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 9092
+        - protocol: TCP
+          port: 9000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              tier: infra
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 9092
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53

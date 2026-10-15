@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/NotificationSent/1.0",
+  "type": "object",
+  "required": [
+    "notificationId",
+    "appointmentId",
+    "channel",
+    "templateId",
+    "recipientRef",
+    "sentAt"
+  ],
+  "properties": {
+    "notificationId": {
+      "type": "string"
+    },
+    "appointmentId": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "string"
+    },
+    "templateId": {
+      "type": "string"
+    },
+    "recipientRef": {
+      "type": "string"
+    },
+    "sentAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

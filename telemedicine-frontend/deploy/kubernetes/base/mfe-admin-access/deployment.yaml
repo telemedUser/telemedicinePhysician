@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-admin-access
+  namespace: telemedicine-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mfe-admin-access
+  template:
+    metadata:
+      labels:
+        app: mfe-admin-access
+    spec:
+      containers:
+        - name: mfe-admin-access
+          image: telemedicine/mfe-admin-access:0.1.0
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfe-admin-access
+  namespace: telemedicine-frontend
+spec:
+  selector:
+    app: mfe-admin-access
+  ports:
+    - port: 80
+      targetPort: 80

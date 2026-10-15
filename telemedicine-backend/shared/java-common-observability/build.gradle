@@ -1,0 +1,28 @@
+plugins {
+    id 'telemedicine.java-library-conventions'
+    id 'telemedicine.quality-conventions'
+    id 'telemedicine.spring-library-conventions'
+    id 'telemedicine.publishing-conventions'
+}
+
+description = 'Correlation, MDC propagation, Micrometer metrics, OTLP tracing and structured logging defaults.'
+
+dependencies {
+    api project(':java-common-core')
+    api 'org.springframework.boot:spring-boot-starter-web'
+    api 'org.springframework.boot:spring-boot-starter-actuator'
+    api 'org.springframework.boot:spring-boot-starter-aop'
+    api libs.micrometer.registry.prometheus
+    api libs.micrometer.tracing.bridge.otel
+    api libs.opentelemetry.exporter.otlp
+    api libs.logstash.logback.encoder
+
+    compileOnly libs.spring.kafka
+    compileOnly 'org.springframework:spring-webflux'
+    compileOnly 'org.springframework.security:spring-security-core'
+
+    testImplementation libs.spring.kafka
+    testImplementation 'org.springframework:spring-webflux'
+    testImplementation 'org.springframework.security:spring-security-core'
+    testImplementation libs.micrometer.tracing.test
+}

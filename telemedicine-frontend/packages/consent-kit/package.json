@@ -1,0 +1,19 @@
+{
+  "name": "@telemedicine/consent-kit",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@telemedicine/api-client": "workspace:*",
+    "@telemedicine/design-system": "workspace:*",
+    "@telemedicine/i18n": "workspace:*",
+    "@telemedicine/session-context": "workspace:*",
+    "@telemedicine/shared-types": "workspace:*",
+    "react": "^18.3.1"
+  }
+}

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: template-python
+  namespace: telemedicine-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: template-python
+  template:
+    metadata:
+      labels:
+        app: template-python
+    spec:
+      containers:
+        - name: template-python
+          image: telemedicine/template-python:0.1.0
+          env:
+            - name: CONSUL_HOST
+              value: consul
+            - name: CONSUL_PORT
+              value: "8500"
+            - name: SERVICE_HOST
+              value: template-python
+            - name: SERVICE_PORT
+              value: "8082"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: template-python
+  namespace: telemedicine-backend
+spec:
+  selector:
+    app: template-python
+  ports:
+    - port: 8082
+      targetPort: 8082

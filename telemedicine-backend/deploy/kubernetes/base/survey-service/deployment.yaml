@@ -1,0 +1,48 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: survey-service
+  namespace: telemedicine-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: survey-service
+  template:
+    metadata:
+      labels:
+        app: survey-service
+    spec:
+      containers:
+        - name: survey-service
+          image: telemedicine/survey-service:0.1.0
+          ports:
+            - containerPort: 8108
+          envFrom:
+            - configMapRef:
+                name: telemedicine-backend-config
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8108
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8108
+            initialDelaySeconds: 60
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: survey-service
+  namespace: telemedicine-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: survey-service
+  ports:
+    - port: 8108
+      targetPort: 8108

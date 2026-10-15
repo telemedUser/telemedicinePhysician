@@ -1,0 +1,73 @@
+plugins {
+    id 'checkstyle'
+    id 'jacoco'
+    id 'com.diffplug.spotless'
+}
+
+// Modules override these before evaluation completes when their shape justifies it
+// (for example test-support libraries, whose own coverage is not a useful signal).
+ext.jacocoLineMinimum = ext.has('jacocoLineMinimum') ? ext.jacocoLineMinimum : 0.80
+ext.jacocoBranchMinimum = ext.has('jacocoBranchMinimum') ? ext.jacocoBranchMinimum : 0.75
+
+spotless {
+    java {
+        target 'src/*/java/**/*.java'
+        googleJavaFormat('1.23.0').aosp().reflowLongStrings()
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+        toggleOffOn()
+    }
+}
+
+checkstyle {
+    toolVersion = providers.gradleProperty('checkstyleVersion').getOrElse('10.18.2')
+    configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+    maxWarnings = 0
+    ignoreFailures = false
+}
+
+// Checkstyle on generated/integration sources adds noise without adding safety.
+tasks.named('checkstyleTest') { enabled = false }
+tasks.matching { it.name == 'checkstyleIntegrationTest' }.configureEach { enabled = false }
+
+jacoco {
+    toolVersion = providers.gradleProperty('jacocoVersion').getOrElse('0.8.12')
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+    dependsOn tasks.named('test')
+}
+
+afterEvaluate {
+    tasks.named('jacocoTestCoverageVerification') {
+        violationRules {
+            rule {
+                element = 'BUNDLE'
+                limit {
+                    counter = 'LINE'
+                    value = 'COVEREDRATIO'
+                    minimum = project.ext.jacocoLineMinimum as BigDecimal
+                }
+                limit {
+                    counter = 'BRANCH'
+                    value = 'COVEREDRATIO'
+                    minimum = project.ext.jacocoBranchMinimum as BigDecimal
+                }
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestReport')
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+}

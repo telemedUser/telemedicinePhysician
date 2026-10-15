@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telemedicine-backend-config
+  namespace: telemedicine-backend
+data:
+  SPRING_PROFILES_ACTIVE: kubernetes,dev
+  KAFKA_BOOTSTRAP: kafka:9092
+  REDIS_HOST: redis
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+  TELEMEDICINE_ENV: dev

@@ -1,0 +1,9 @@
+{
+  "extends": "./react.json",
+  "files": [],
+  "references": [
+    { "path": "./base.json" },
+    { "path": "./react.json" },
+    { "path": "./vitest.json" }
+  ]
+}

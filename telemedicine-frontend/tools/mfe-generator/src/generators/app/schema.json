@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "MfeApp",
+  "title": "Scaffold a microfrontend app",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "MFE name (e.g. patient-mfe)",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-prompt": "What is the name of the microfrontend?"
+    },
+    "route": {
+      "type": "string",
+      "description": "Shell route path (defaults to /{name})"
+    },
+    "port": {
+      "type": "number",
+      "description": "Dev server port",
+      "default": 3002
+    }
+  },
+  "required": ["name"]
+}

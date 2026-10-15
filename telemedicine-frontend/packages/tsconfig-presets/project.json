@@ -1,0 +1,7 @@
+{
+  "name": "tsconfig-presets",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/tsconfig-presets",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:config"]
+}

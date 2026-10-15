@@ -1,0 +1,27 @@
+openapi: 3.1.0
+info:
+  title: Survey Service API
+  version: 1.0.0
+paths:
+  /api/v1/survey/{appointmentId}/responses:
+    post:
+      summary: Submit a post-consultation NPS response
+      responses:
+        '200':
+          description: Survey completed
+        '409':
+          description: Survey already submitted
+  /api/v1/survey/{appointmentId}:
+    get:
+      summary: Survey availability for an appointment
+      responses:
+        '200':
+          description: Availability returned
+        '404':
+          description: Survey not found
+  /api/v1/internal/jobs/survey-dispatch/run:
+    post:
+      summary: Backup dispatch for pending survey requests
+      responses:
+        '200':
+          description: Job summary

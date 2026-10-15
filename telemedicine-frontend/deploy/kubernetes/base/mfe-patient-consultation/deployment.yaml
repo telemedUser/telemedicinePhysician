@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-patient-consultation
+  namespace: telemedicine-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mfe-patient-consultation
+  template:
+    metadata:
+      labels:
+        app: mfe-patient-consultation
+    spec:
+      containers:
+        - name: mfe-patient-consultation
+          image: telemedicine/mfe-patient-consultation:0.1.0
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfe-patient-consultation
+  namespace: telemedicine-frontend
+spec:
+  selector:
+    app: mfe-patient-consultation
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,87 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Production image tag (semver or git SHA)
+        required: true
+      canary_weight:
+        description: Initial canary traffic weight (0-100)
+        required: false
+        default: '10'
+      promote:
+        description: Promote green to 100% after canary validation
+        type: boolean
+        required: false
+        default: false
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy-blue-green:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_PROD }}" | base64 -d > ~/.kube/config
+
+      - name: Deploy green stack (canary backend)
+        run: |
+          TAG="${{ github.event.inputs.image_tag }}"
+          OVERLAY=telemedicine-platform/kubernetes/overlays/prod
+          cd "$OVERLAY"
+          kustomize edit set image telemedicine/gateway=telemedicine/gateway:$TAG
+          kubectl apply -k .
+          kubectl patch deployment gateway -n telemedicine-backend \
+            -p '{"spec":{"template":{"metadata":{"labels":{"deployment-color":"green"}}}}}' || true
+          kubectl rollout status deployment/gateway -n telemedicine-backend --timeout=600s
+
+      - name: Enable canary ingress
+        env:
+          CANARY_WEIGHT: ${{ github.event.inputs.canary_weight || '10' }}
+        run: |
+          kubectl annotate ingress telemedicine-ingress-green -n telemedicine \
+            nginx.ingress.kubernetes.io/canary-weight="$CANARY_WEIGHT" --overwrite
+          kubectl annotate ingress telemedicine-ingress-green -n telemedicine \
+            nginx.ingress.kubernetes.io/canary=true --overwrite
+
+      - name: Canary health validation
+        run: |
+          for i in $(seq 1 12); do
+            if curl -sf https://api.example.com/actuator/health; then
+              echo "Canary health check passed"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Canary health check failed — initiating rollback"
+          exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          kubectl annotate ingress telemedicine-ingress-green -n telemedicine \
+            nginx.ingress.kubernetes.io/canary-weight="0" --overwrite
+          kubectl rollout undo deployment/gateway -n telemedicine-backend || true
+          echo "Rolled back to blue deployment"
+
+      - name: Promote green to 100%
+        if: github.event.inputs.promote == 'true'
+        run: |
+          kubectl annotate ingress telemedicine-ingress -n telemedicine \
+            telemedicine.io/deployment-color=green --overwrite
+          kubectl annotate ingress telemedicine-ingress-green -n telemedicine \
+            nginx.ingress.kubernetes.io/canary-weight="100" --overwrite
+          kubectl patch deployment gateway -n telemedicine-backend \
+            -p '{"spec":{"template":{"metadata":{"labels":{"deployment-color":"blue"}}}}}'
+          kubectl annotate ingress telemedicine-ingress-green -n telemedicine \
+            nginx.ingress.kubernetes.io/canary-weight="0" --overwrite
+          echo "Production promoted to green"

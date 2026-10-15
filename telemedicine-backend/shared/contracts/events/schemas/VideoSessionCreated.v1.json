@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/VideoSessionCreated/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "sessionId",
+    "provider",
+    "createdAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

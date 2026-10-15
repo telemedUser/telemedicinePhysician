@@ -1,0 +1,145 @@
+/*
+ * Physician app theme — Connected Care telemedicine.
+ * Figtree type, navy + blue palette, warm paper background,
+ * Material Symbols Rounded icons.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap');
+
+:root {
+  /* Brand */
+  --bp-navy: #10294a;
+  --bp-navy-2: #1e3a5f;
+  --bp-slate: #3a4453;
+  --bp-blue: #0079c8;
+  --bp-blue-dark: #0068ac;
+  --bp-blue-tint: #eaf4fb;
+  --bp-blue-tint-2: #f5fafe;
+
+  /* Text */
+  --bp-text: #1d2433;
+  --bp-text-2: #3a4453;
+  --bp-muted: #5b6675;
+  --bp-muted-2: #8a94a0;
+  --bp-on-dark: #c9d0d8;
+  --bp-on-dark-muted: #9aa3ae;
+
+  /* Surfaces */
+  --bp-paper: #e7e4dd;
+  --bp-surface: #ffffff;
+  --bp-surface-2: #f6f8fa;
+  --bp-nav: #e3e6ea;
+
+  /* Borders */
+  --bp-border: #d3d8de;
+  --bp-border-2: #e1e4e8;
+
+  /* Status */
+  --bp-ok: #14683d;
+  --bp-ok-2: #1b7f4c;
+  --bp-ok-bg: #e3f4ea;
+  --bp-warn: #8a4b00;
+  --bp-warn-bg: #fdf1e0;
+  --bp-danger: #a61b1b;
+  --bp-danger-bg: #fdf0f0;
+  --bp-info: #0068ac;
+  --bp-info-bg: #eaf4fb;
+
+  /* Radii & shadow */
+  --bp-radius: 10px;
+  --bp-radius-sm: 8px;
+  --bp-pill: 999px;
+  --bp-shadow: 0 1px 2px rgba(16, 41, 74, 0.06), 0 2px 8px rgba(16, 41, 74, 0.06);
+  --bp-shadow-lg: 0 8px 28px rgba(16, 41, 74, 0.14);
+
+  /* Design-system variable bridge (so shared components adopt the palette) */
+  --tm-color-primary: var(--bp-blue);
+  --tm-color-text: var(--bp-text);
+  --tm-color-text-muted: var(--bp-muted);
+  --tm-color-border: var(--bp-border);
+  --tm-color-bg: var(--bp-surface);
+  --tm-color-bg-muted: var(--bp-surface-2);
+  --tm-color-danger: var(--bp-danger);
+  --tm-color-success: var(--bp-ok);
+  --tm-color-warning: var(--bp-warn);
+  --tm-color-info: var(--bp-info);
+  --tm-shadow-md: var(--bp-shadow);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  background: var(--bp-paper);
+  color: var(--bp-text);
+  font-family: Figtree, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: var(--bp-blue);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--bp-blue-dark);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--bp-text);
+  letter-spacing: -0.01em;
+}
+
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes bpIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes bpPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+@keyframes bpSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Scrollbars to match the calm UI */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bp-border) transparent;
+}

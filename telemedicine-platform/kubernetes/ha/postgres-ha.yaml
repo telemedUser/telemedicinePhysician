@@ -1,0 +1,256 @@
+# PostgreSQL primary + streaming replica for RPO < 15 min targets.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-ha-credentials
+  namespace: telemedicine
+type: Opaque
+stringData:
+  POSTGRES_USER: telemedicine
+  POSTGRES_PASSWORD: change-me-in-vault
+  REPLICATION_USER: replicator
+  REPLICATION_PASSWORD: change-me-in-vault
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-primary-config
+  namespace: telemedicine
+data:
+  postgresql.conf: |
+    wal_level = replica
+    max_wal_senders = 10
+    max_replication_slots = 10
+    hot_standby = on
+    archive_mode = on
+    archive_command = 'test ! -f /var/lib/postgresql/archive/%f && cp %p /var/lib/postgresql/archive/%f'
+  pg_hba.conf: |
+    local all all trust
+    host all all 0.0.0.0/0 scram-sha-256
+    host replication replicator 0.0.0.0/0 scram-sha-256
+  init-primary.sh: |
+    #!/bin/sh
+    set -e
+    if [ ! -s "$PGDATA/PG_VERSION" ]; then
+      initdb -U "$POSTGRES_USER" --pwfile=<(echo "$POSTGRES_PASSWORD")
+      cp /config/postgresql.conf "$PGDATA/postgresql.conf"
+      cp /config/pg_hba.conf "$PGDATA/pg_hba.conf"
+      echo "host replication replicator 0.0.0.0/0 scram-sha-256" >> "$PGDATA/pg_hba.conf"
+      pg_ctl -D "$PGDATA" -o "-c listen_addresses='*'" -w start
+      psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+        CREATE USER replicator REPLICATION LOGIN PASSWORD '$REPLICATION_PASSWORD';
+        CREATE DATABASE telemedicine;
+      EOSQL
+      pg_ctl -D "$PGDATA" -m fast -w stop
+    fi
+    exec postgres -c config_file=/config/postgresql.conf -c hba_file=/config/pg_hba.conf
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-replica-config
+  namespace: telemedicine
+data:
+  postgresql.conf: |
+    hot_standby = on
+  init-replica.sh: |
+    #!/bin/sh
+    set -e
+    if [ ! -s "$PGDATA/PG_VERSION" ]; then
+      until pg_isready -h postgres-primary -p 5432; do sleep 2; done
+      PGPASSWORD="$REPLICATION_PASSWORD" pg_basebackup -h postgres-primary -D "$PGDATA" -U replicator -Fp -Xs -P -R
+    fi
+    exec postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-primary
+  namespace: telemedicine
+  labels:
+    app: postgres
+    role: primary
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: postgres
+    role: primary
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-replica
+  namespace: telemedicine
+  labels:
+    app: postgres
+    role: replica
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: postgres
+    role: replica
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-standby
+  namespace: telemedicine
+  labels:
+    app: postgres
+    role: replica
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: postgres
+    role: replica
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-primary-pdb
+  namespace: telemedicine
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: postgres
+      role: primary
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-primary
+  namespace: telemedicine
+spec:
+  serviceName: postgres-primary
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+      role: primary
+  template:
+    metadata:
+      labels:
+        app: postgres
+        role: primary
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-ha-credentials
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: config
+              mountPath: /config
+            - name: archive
+              mountPath: /var/lib/postgresql/archive
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "telemedicine"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "telemedicine"]
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+      volumes:
+        - name: config
+          configMap:
+            name: postgres-primary-config
+            defaultMode: 0755
+        - name: archive
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 100Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-replica
+  namespace: telemedicine
+spec:
+  serviceName: postgres-replica
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+      role: replica
+  template:
+    metadata:
+      labels:
+        app: postgres
+        role: replica
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-ha-credentials
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          command: ["/bin/sh", "/config/init-replica.sh"]
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: config
+              mountPath: /config
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "telemedicine"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+      volumes:
+        - name: config
+          configMap:
+            name: postgres-replica-config
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 100Gi

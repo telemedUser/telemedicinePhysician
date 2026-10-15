@@ -1,0 +1,65 @@
+server:
+  port: 8101
+
+spring:
+  profiles:
+    active: dev
+  application:
+    name: waiting-room-service
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:waiting_room}
+    username: ${DB_USER:waiting_room}
+    password: ${DB_PASSWORD:change-me-locally}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration,classpath:db/migration/common
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+
+telemedicine:
+  events:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+  security:
+    consent:
+      http-verifier-enabled: false
+  waiting-room:
+    platform-consent-version: ${PLATFORM_CONSENT_VERSION:1.0}
+    clinical-consent-version: ${CLINICAL_CONSENT_VERSION:1.0}
+    session-link-secret: ${SESSION_LINK_SECRET:change-me-locally}
+    session-link-ttl: PT24H
+    session-link-base-url: ${SESSION_LINK_BASE_URL:http://localhost:3000/journey}
+    queue-avg-wait-sec: 90
+    waiting-room-timeout: PT30M
+    no-show-threshold: PT15M
+    integration-service-url: ${INTEGRATION_SERVICE_URL:http://integration-service:8107}
+    identity-service-url: ${IDENTITY_SERVICE_URL:http://identity-service:8102}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

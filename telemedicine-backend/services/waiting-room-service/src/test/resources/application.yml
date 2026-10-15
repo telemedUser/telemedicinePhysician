@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:waiting_room;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
+
+telemedicine:
+  security:
+    mode: DEV
+    consent:
+      http-verifier-enabled: false
+  waiting-room:
+    session-link-secret: test-secret
+    integration-service-url: http://localhost:9999

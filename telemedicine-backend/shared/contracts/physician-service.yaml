@@ -1,0 +1,253 @@
+openapi: 3.1.0
+info:
+  title: Physician Service API
+  version: 1.0.0
+  description: >
+    Provider & Physician Management (PRD §21), the physician worklist read model (§12.3) and
+    consultation closure orchestration (§14.2). Video conferencing is out of scope; media sessions
+    are owned by the video service.
+paths:
+  /api/v1/physicians:
+    get:
+      summary: Search providers (projection of HIS data)
+      parameters:
+        - name: specialty
+          in: query
+          schema: { type: string }
+        - name: mode
+          in: query
+          schema: { type: string, enum: [video, audio, chat] }
+        - name: language
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [ACTIVE, SUSPENDED, ON_LEAVE, OFFBOARDED] }
+      responses:
+        '200':
+          description: Provider list
+  /api/v1/physicians/{providerId}:
+    get:
+      summary: Provider projection
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: view
+          in: query
+          description: Return the FHIR Practitioner view when set to 'fhir'
+          schema: { type: string, enum: [native, fhir] }
+      responses:
+        '200':
+          description: Provider details
+        '404':
+          description: Provider not found
+  /api/v1/physicians/{providerId}/status:
+    put:
+      summary: Set provider operational status (immediate routing/directory effect)
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderStatusRequest'
+      responses:
+        '200':
+          description: Status changed
+  /api/v1/physicians/{providerId}/availability:
+    get:
+      summary: Provider availability and capacity
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Availability windows
+    put:
+      summary: Manage availability and per-mode concurrency limits
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Availability updated
+  /api/v1/physicians/{providerId}/metrics:
+    get:
+      summary: Per-physician productivity metrics
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Utilisation, duration, documentation time, no-show and failure rates
+  /api/v1/physicians/me/worklist:
+    get:
+      summary: Authenticated physician's worklist
+      parameters:
+        - name: X-Market
+          in: header
+          schema: { type: string, default: CL }
+      responses:
+        '200':
+          description: Worklist entries
+  /api/v1/physicians/me/worklist/{appointmentId}/context:
+    get:
+      summary: Patient context read model for a worklist item
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Patient context (FHIR-referencing)
+  /api/v1/physicians/me/worklist/{appointmentId}/red-flag/ack:
+    post:
+      summary: Acknowledge a red flag before joining
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Acknowledgement recorded
+  /api/v1/physicians/me/consultations/{appointmentId}/close:
+    post:
+      summary: Close a consultation (emits ConsultationClosed when minimum completion set satisfied)
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-Market
+          in: header
+          schema: { type: string, default: CL }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseConsultationRequest'
+      responses:
+        '200':
+          description: Closure result
+  /api/v1/internal/physicians/{providerId}/availability-snapshot:
+    get:
+      summary: Availability snapshot for routing (service), with credential-validity gate
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Availability snapshot
+  /api/v1/internal/jobs/provider-projection/refresh:
+    post:
+      summary: Reconcile provider projection with HIS (service)
+      responses:
+        '200':
+          description: Job summary
+components:
+  schemas:
+    ProviderStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, SUSPENDED, ON_LEAVE, OFFBOARDED]
+        reason:
+          type: string
+    CloseConsultationRequest:
+      type: object
+      required: [completedDocuments]
+      properties:
+        completedDocuments:
+          type: array
+          items:
+            type: string
+            enum: [NOTE, DIAGNOSIS, PRESCRIPTION, CERTIFICATE, REFERRAL, FOLLOW_UP]
+        exceptionReason:
+          type: string
+    CloseConsultationResponse:
+      type: object
+      properties:
+        appointmentId: { type: string }
+        closed: { type: boolean }
+        minimumSatisfied: { type: boolean }
+        missingDocuments:
+          type: array
+          items: { type: string }
+  /api/v1/physicians/me/consultations/{appointmentId}/chat:
+    get:
+      summary: Clinical chat transcript for a consultation (PRD §13.3)
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Transcript (oldest first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessage'
+    post:
+      summary: Post a clinical chat message (also broadcast over STOMP)
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendChatMessageRequest'
+      responses:
+        '200':
+          description: Persisted message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+components:
+  schemas:
+    ChatMessage:
+      type: object
+      properties:
+        id: { type: string }
+        appointmentId: { type: string }
+        senderRole: { type: string, enum: [PHYSICIAN, PATIENT] }
+        body: { type: string }
+        clinical: { type: boolean }
+        sentAt: { type: string, format: date-time }
+    SendChatMessageRequest:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string }
+        senderRole: { type: string, enum: [PHYSICIAN, PATIENT] }
+        clinical: { type: boolean }
+# Real-time transport (not a REST path):
+#   WebSocket/STOMP endpoint:  /ws/chat   (SockJS enabled)
+#   subscribe:  /topic/consultation/{appointmentId}
+#   publish:    /app/consultation/{appointmentId}/send

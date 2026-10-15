@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/PatientEnteredWaitingRoom/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "patientRef",
+    "queuePosition",
+    "enteredAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "patientRef": {
+      "type": "string"
+    },
+    "queuePosition": {
+      "type": "integer"
+    },
+    "enteredAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

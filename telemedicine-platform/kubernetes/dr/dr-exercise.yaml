@@ -1,0 +1,48 @@
+# Monthly DR exercise — validates RPO/RTO targets without promoting production.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dr-monthly-exercise
+  namespace: telemedicine
+  labels:
+    telemedicine.io/dr-component: monthly-exercise
+spec:
+  schedule: "0 3 1 * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 604800
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            telemedicine.io/dr-component: monthly-exercise
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: dr-exercise
+              image: curlimages/curl:8.10.1
+              envFrom:
+                - configMapRef:
+                    name: dr-runbook-trigger
+              command:
+                - sh
+                - -c
+                - |
+                  set -e
+                  echo "=== Telemedicine DR monthly exercise ==="
+                  echo "RPO target: ${rpo-minutes} minutes | RTO target: ${rto-minutes} minutes"
+                  echo "Secondary region: ${secondary-region}"
+                  curl -sf http://gateway.telemedicine-backend.svc.cluster.local:8080/actuator/health
+                  curl -sf http://gateway.telemedicine-backend.svc.cluster.local:8080/bff/admin/monitoring/snapshot || true
+                  echo "Checking postgres standby..."
+                  nc -zvw5 postgres-standby 5432
+                  echo "Checking kafka quorum..."
+                  nc -zvw5 kafka-0.kafka-headless 9092
+                  nc -zvw5 kafka-1.kafka-headless 9092
+                  nc -zvw5 kafka-2.kafka-headless 9092
+                  echo "Checking redis cluster..."
+                  nc -zvw5 redis-0.redis-headless 6379
+                  echo "DR exercise smoke checks passed — record results in runbook"

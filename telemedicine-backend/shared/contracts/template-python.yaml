@@ -1,0 +1,26 @@
+openapi: 3.0.3
+info:
+  title: Template Python Service
+  version: 0.1.0
+paths:
+  /api/v1/template-python/hello:
+    get:
+      summary: Hello endpoint
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        message:
+          type: string

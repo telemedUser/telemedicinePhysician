@@ -1,0 +1,26 @@
+@baseUrl = http://localhost:8200
+
+### Apply resilience preset
+POST {{baseUrl}}/sim/admin/scenarios/resilience
+
+### HIS with injected latency
+GET {{baseUrl}}/sim/his/appointments/apt-resilience-001
+
+### Payment may fail (~20%)
+GET {{baseUrl}}/sim/payment/validate/apt-resilience-001
+
+### Vonage should fail (100% error rate)
+POST {{baseUrl}}/sim/vonage/session
+Content-Type: application/json
+
+{
+  "appointmentId": "apt-resilience-001"
+}
+
+### ACS fallback
+POST {{baseUrl}}/sim/acs/session
+Content-Type: application/json
+
+{
+  "appointmentId": "apt-resilience-001"
+}

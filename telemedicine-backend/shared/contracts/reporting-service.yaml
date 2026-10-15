@@ -1,0 +1,35 @@
+openapi: 3.1.0
+info:
+  title: Reporting Service API
+  version: 1.0.0
+paths:
+  /api/v1/reporting/kpis:
+    get:
+      summary: List KPI families aggregated from domain events
+      responses:
+        '200':
+          description: KPI snapshot
+  /api/v1/reporting/kpis/{family}:
+    get:
+      summary: KPI metrics for a single family (technical, functional, business)
+      parameters:
+        - name: family
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: KPI family metrics
+  /api/v1/reporting/exports:
+    post:
+      summary: Export KPI report to object storage
+      responses:
+        '200':
+          description: Export metadata with download URL
+  /api/v1/internal/jobs/report-generation/run:
+    post:
+      summary: Generate daily KPI snapshots
+      responses:
+        '200':
+          description: Job summary

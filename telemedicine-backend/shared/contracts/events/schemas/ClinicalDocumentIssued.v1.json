@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/ClinicalDocumentIssued/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "documentId",
+    "documentType",
+    "physicianRef",
+    "issuedAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "documentId": {
+      "type": "string"
+    },
+    "documentType": {
+      "type": "string"
+    },
+    "physicianRef": {
+      "type": "string"
+    },
+    "issuedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

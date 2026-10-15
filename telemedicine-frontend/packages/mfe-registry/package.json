@@ -1,0 +1,16 @@
+{
+  "name": "@telemedicine/mfe-registry",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@telemedicine/auth": "workspace:*",
+    "@telemedicine/shared-types": "workspace:*",
+    "@module-federation/runtime": "^0.8.3"
+  }
+}

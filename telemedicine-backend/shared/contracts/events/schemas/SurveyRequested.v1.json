@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/SurveyRequested/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "surveyId",
+    "channel",
+    "requestedAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "surveyId": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "string"
+    },
+    "requestedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

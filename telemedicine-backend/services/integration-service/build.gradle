@@ -1,0 +1,32 @@
+plugins {
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+}
+
+dependencies {
+    implementation project(':java-common-core')
+    implementation project(':java-common-web')
+    implementation project(':java-common-security')
+    implementation project(':java-common-events')
+    implementation project(':java-common-observability')
+    implementation project(':java-common-integration')
+    implementation project(':java-common-audit')
+    // --- mock datastore connection (delete with datastore/ and infrastructure/mock/) ---
+    implementation project(':java-common-mock-data')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.cloud:spring-cloud-starter-consul-discovery'
+    implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+    // Postgres — active only with spring.profiles.active=postgres
+    implementation project(':java-common-persistence')
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    runtimeOnly 'org.postgresql:postgresql'
+    testImplementation project(':java-common-testing')
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+bootJar { archiveFileName = 'integrationservice.jar' }

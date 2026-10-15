@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="false">
+    <conversionRule conversionWord="phiSafeMsg" converterClass="com.telemedicine.common.observability.logging.PhiRedactingMessageConverter"/>
+
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="telemedicine"/>
+    <springProperty scope="context" name="jsonLogging" source="telemedicine.observability.logging.json-enabled" defaultValue="false"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %phiSafeMsg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp/>
+                <logLevel/>
+                <loggerName/>
+                <threadName/>
+                <message class="com.telemedicine.common.observability.logging.PhiRedactingMessageJsonProvider"/>
+                <mdc>
+                    <includeMdcKeyName>correlationId</includeMdcKeyName>
+                    <includeMdcKeyName>traceId</includeMdcKeyName>
+                    <includeMdcKeyName>spanId</includeMdcKeyName>
+                    <includeMdcKeyName>userId</includeMdcKeyName>
+                    <includeMdcKeyName>appointmentId</includeMdcKeyName>
+                    <includeMdcKeyName>eventId</includeMdcKeyName>
+                    <includeMdcKeyName>eventType</includeMdcKeyName>
+                </mdc>
+                <globalCustomFields>{"service":"${appName}"}</globalCustomFields>
+            </providers>
+        </encoder>
+    </appender>
+
+    <springProfile name="logs">
+        <root level="INFO">
+            <appender-ref ref="JSON"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="!logs">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+</configuration>

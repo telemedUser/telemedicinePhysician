@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/DeviceTestCompleted/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "patientRef",
+    "cameraOk",
+    "microphoneOk",
+    "bandwidthKbps",
+    "completedAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "patientRef": {
+      "type": "string"
+    },
+    "cameraOk": {
+      "type": "boolean"
+    },
+    "microphoneOk": {
+      "type": "boolean"
+    },
+    "bandwidthKbps": {
+      "type": "integer"
+    },
+    "completedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

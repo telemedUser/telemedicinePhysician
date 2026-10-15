@@ -1,0 +1,48 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: physician-bff
+  namespace: telemedicine-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: physician-bff
+  template:
+    metadata:
+      labels:
+        app: physician-bff
+    spec:
+      containers:
+        - name: physician-bff
+          image: telemedicine/physician-bff:0.1.0
+          ports:
+            - containerPort: 8091
+          envFrom:
+            - configMapRef:
+                name: telemedicine-backend-config
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8091
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8091
+            initialDelaySeconds: 60
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: physician-bff
+  namespace: telemedicine-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: physician-bff
+  ports:
+    - port: 8091
+      targetPort: 8091

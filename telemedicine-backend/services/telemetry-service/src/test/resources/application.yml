@@ -1,0 +1,31 @@
+spring:
+  cloud:
+    consul:
+      enabled: false
+      discovery:
+        enabled: false
+        register: false
+  datasource:
+    url: jdbc:h2:mem:telemetry;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  kafka:
+    listener:
+      auto-startup: false
+
+telemedicine:
+  security:
+    consent:
+      enabled: false
+      http-verifier-enabled: false
+  integration:
+    config-service-base-url: http://localhost:${wiremock.server.port:8080}
+    simulator:
+      base-url: http://localhost:${wiremock.server.port:8080}
+  persistence:
+    phi-encryption-key: dGVzdC1rZXktMzJieXRzLWxvbmctZW5vdWdoMTIzNDU2Nzg=

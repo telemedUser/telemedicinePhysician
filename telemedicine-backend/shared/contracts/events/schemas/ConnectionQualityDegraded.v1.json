@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/ConnectionQualityDegraded/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "sessionId",
+    "participantRole",
+    "qualityScore",
+    "detectedAt"
+  ],
+  "properties": {
+    "appointmentId": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "participantRole": {
+      "type": "string"
+    },
+    "qualityScore": {
+      "type": "integer"
+    },
+    "detectedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

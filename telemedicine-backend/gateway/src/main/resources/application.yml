@@ -1,0 +1,273 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  profiles:
+    active: dev
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+        tags: metrics-path=/actuator/prometheus
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      httpclient:
+        max-header-size: 16KB
+        max-initial-line-length: 8KB
+      default-filters:
+        - name: CircuitBreaker
+          args:
+            name: defaultCircuitBreaker
+            fallbackUri: forward:/fallback
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: ${telemedicine.gateway.rate-limit.replenish-rate:100}
+            redis-rate-limiter.burstCapacity: ${telemedicine.gateway.rate-limit.burst-capacity:200}
+            key-resolver: "#{@userKeyResolver}"
+      routes:
+        - id: patient-bff
+          uri: lb://patient-bff
+          predicates: [Path=/bff/patient/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: patientBffCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: physician-bff
+          uri: lb://physician-bff
+          predicates: [Path=/bff/physician/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: physicianBffCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: admin-bff
+          uri: lb://admin-bff
+          predicates: [Path=/bff/admin/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: adminBffCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: waiting-room-service
+          uri: lb://waiting-room-service
+          predicates: [Path=/api/v1/waiting-room/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: waitingRoomCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: identity-service
+          uri: lb://identity-service
+          predicates: [Path=/api/v1/identity/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: identityCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: video-service
+          uri: lb://video-service
+          predicates: [Path=/api/v1/video/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: videoCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: telemetry-service
+          uri: lb://telemetry-service
+          predicates: [Path=/api/v1/telemetry/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: telemetryCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: clinical-docs-service
+          uri: lb://clinical-docs-service
+          predicates: [Path=/api/v1/clinical-docs/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: clinicalDocsCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: notification-service
+          uri: lb://notification-service
+          predicates: [Path=/api/v1/notifications/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: notificationCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: physician-service
+          uri: lb://physician-service
+          predicates: [Path=/api/v1/physicians/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: physicianCircuitBreaker
+                fallbackUri: forward:/fallback
+        # Real-time clinical chat (STOMP over WebSocket). Routed to physician-service; the
+        # SockJS/WebSocket upgrade is proxied through to lb://physician-service.
+        - id: physician-chat-ws
+          uri: lb://physician-service
+          predicates: [Path=/ws/chat/**]
+        - id: integration-service
+          uri: lb://integration-service
+          predicates: [Path=/v1/appointments/v2/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: integrationCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: integration-webhooks
+          uri: lb://integration-service
+          predicates: [Path=/api/v1/integration/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: integrationWebhooksCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: survey-service
+          uri: lb://survey-service
+          predicates: [Path=/api/v1/survey/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: surveyCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: reporting-service
+          uri: lb://reporting-service
+          predicates: [Path=/api/v1/reporting/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: reportingCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: monitoring-service
+          uri: lb://monitoring-service
+          predicates: [Path=/api/v1/monitoring/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: monitoringCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: config-service
+          uri: lb://config-service
+          predicates: [Path=/api/v1/config/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: configCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: audit-service
+          uri: lb://audit-service
+          predicates: [Path=/api/v1/audit/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: auditCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: scheduler-service
+          uri: lb://scheduler-service
+          predicates: [Path=/api/v1/scheduler/**]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: schedulerCircuitBreaker
+                fallbackUri: forward:/fallback
+        - id: external-simulators
+          uri: lb://external-simulators
+          predicates: [Path=/sim/**]
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 30
+                redis-rate-limiter.burstCapacity: 60
+                key-resolver: "#{@pathKeyResolver}"
+            - name: CircuitBreaker
+              args:
+                name: simulatorsCircuitBreaker
+                fallbackUri: forward:/fallback
+
+telemedicine:
+  security:
+    mode: ${TELEMEDICINE_SECURITY_MODE:DEV}
+    jwt:
+      jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8180/realms/telemedicine/protocol/openid-connect/certs}
+      issuer: ${KEYCLOAK_ISSUER:http://localhost:8180/realms/telemedicine}
+  gateway:
+    rate-limit:
+      replenish-rate: 100
+      burst-capacity: 200
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+    instances:
+      defaultCircuitBreaker:
+        baseConfig: default
+      patientBffCircuitBreaker:
+        baseConfig: default
+      physicianBffCircuitBreaker:
+        baseConfig: default
+      adminBffCircuitBreaker:
+        baseConfig: default
+      configCircuitBreaker:
+        baseConfig: default
+      auditCircuitBreaker:
+        baseConfig: default
+      schedulerCircuitBreaker:
+        baseConfig: default
+      waitingRoomCircuitBreaker:
+        baseConfig: default
+      identityCircuitBreaker:
+        baseConfig: default
+      videoCircuitBreaker:
+        baseConfig: default
+      telemetryCircuitBreaker:
+        baseConfig: default
+      clinicalDocsCircuitBreaker:
+        baseConfig: default
+      notificationCircuitBreaker:
+        baseConfig: default
+      integrationCircuitBreaker:
+        baseConfig: default
+      integrationWebhooksCircuitBreaker:
+        baseConfig: default
+      surveyCircuitBreaker:
+        baseConfig: default
+      reportingCircuitBreaker:
+        baseConfig: default
+      monitoringCircuitBreaker:
+        baseConfig: default
+      simulatorsCircuitBreaker:
+        baseConfig: default

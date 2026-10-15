@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-patient-consent
+  namespace: telemedicine-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mfe-patient-consent
+  template:
+    metadata:
+      labels:
+        app: mfe-patient-consent
+    spec:
+      containers:
+        - name: mfe-patient-consent
+          image: telemedicine/mfe-patient-consent:0.1.0
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfe-patient-consent
+  namespace: telemedicine-frontend
+spec:
+  selector:
+    app: mfe-patient-consent
+  ports:
+    - port: 80
+      targetPort: 80

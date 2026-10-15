@@ -1,0 +1,16 @@
+spring:
+  profiles:
+    active: mock
+  cloud:
+    consul:
+      enabled: false
+      discovery:
+        enabled: false
+        register: false
+  kafka:
+    listener:
+      auto-startup: false
+
+telemedicine:
+  datastore:
+    root: file:../../datastore/seeds
