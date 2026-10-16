@@ -1,15 +1,32 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { AuthProvider, useAuth } from '@telemedicine/auth';
-import { ApiClientProvider } from '@telemedicine/api-client';
+import { ApiClientProvider, createDefaultApiClient } from '@telemedicine/api-client';
 import { FeatureFlagProvider } from '@telemedicine/feature-flags';
 import { I18nProvider } from '@telemedicine/i18n';
 import { ObservabilityProvider } from '@telemedicine/observability-web';
 import { ThemeProvider } from '@telemedicine/design-system';
 import { authConfig } from '../config/authConfig';
+import { currentPhysicianId } from '../auth/physicianSession';
 
 function ApiClientWithAuth({ children }: { children: ReactNode }) {
   const { getAccessToken } = useAuth();
-  return <ApiClientProvider getToken={getAccessToken}>{children}</ApiClientProvider>;
+  // Build the client once and attach an interceptor that stamps the signed-in physician's id on
+  // every request (X-Physician-Id). The physician-service dev chain uses it to scope the worklist.
+  const client = useMemo(() => {
+    const c = createDefaultApiClient(getAccessToken);
+    c.addRequestInterceptor((config) => {
+      const id = currentPhysicianId();
+      if (id) {
+        config.headers = {
+          ...(config.headers as Record<string, string>),
+          'X-Physician-Id': id,
+        };
+      }
+      return config;
+    });
+    return c;
+  }, [getAccessToken]);
+  return <ApiClientProvider client={client}>{children}</ApiClientProvider>;
 }
 
 /**

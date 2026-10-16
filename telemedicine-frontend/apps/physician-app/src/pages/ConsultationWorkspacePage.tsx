@@ -105,7 +105,7 @@ export function ConsultationWorkspacePage() {
         </BpButton>
       </Card>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 16, alignItems: 'start' }}>
+      <div className="grid-2col" style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 16, alignItems: 'start' }}>
         {/* LEFT: video placeholder + chat/transcript */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Card

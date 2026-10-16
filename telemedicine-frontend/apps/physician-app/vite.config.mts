@@ -27,6 +27,13 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
+      // Cross-service read: the patient-booking-service (:8120) owns what the patient submitted
+      // when booking (reason, slot, mode, fee). The physician "View details" screen reads it here.
+      '/booking-api': {
+        target: 'http://localhost:8120',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/booking-api/, '/api'),
+      },
     },
   },
   preview: {

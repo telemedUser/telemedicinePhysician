@@ -134,9 +134,9 @@ export function PreviousPatientsPage() {
                       paddingTop: 14,
                       borderTop: '1px solid var(--bp-border-2)',
                       display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
                       gap: 18,
                     }}
+                    className="grid-2col-inline"
                   >
                     <div>
                       <Overline>Consultation note</Overline>

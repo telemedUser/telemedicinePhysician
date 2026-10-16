@@ -1,36 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePhysicianApi } from '../api/physicianApi';
-import type { Readiness, WorklistEntry, WorklistFlag } from '../api/types';
+import type { Readiness, WorklistEntry } from '../api/types';
 import { MOCK_WORKLIST_AFTER } from '../data/mockData';
 import { labels } from '../config/labels';
-import {
-  Avatar,
-  BpButton,
-  BpSelect,
-  Card,
-  Icon,
-  Pill,
-  SectionHeader,
-  type Tone,
-} from '../ui/primitives';
-import { formatWaiting } from '../components/badges';
+import { Avatar, BpButton, Icon } from '../ui/primitives';
 
 const REFRESH_MS = 15000;
 const READINESS_RANK: Record<Readiness, number> = { READY: 0, IN_PROGRESS: 1, NOT_READY: 2 };
-type SortKey = 'waiting' | 'readiness';
-
-const READINESS_TONE: Record<Readiness, Tone> = {
-  READY: 'green',
-  IN_PROGRESS: 'amber',
-  NOT_READY: 'neutral',
-};
-const FLAG_TONE: Record<WorklistFlag, Tone> = {
-  FIRST_VISIT: 'blue',
-  FOLLOW_UP: 'navy',
-  GUEST: 'amber',
-  RED_FLAG: 'red',
-};
+type TabKey = 'all' | 'waiting' | 'completed';
 
 function initials(name?: string) {
   if (!name) return '··';
@@ -43,6 +21,25 @@ function initials(name?: string) {
     .join('');
 }
 
+/** Entered-at as a HH:MM clock, falling back to a dash when the patient hasn't checked in. */
+function clockOf(entry: WorklistEntry): string {
+  if (!entry.enteredAt) return '—';
+  const d = new Date(entry.enteredAt);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+/** "Waiting 8 min" style, matching the reference copy. */
+function waitingLabel(seconds: number): string {
+  const mins = Math.max(0, Math.round(seconds / 60));
+  if (mins < 1) return 'Waiting <1 min';
+  return `Waiting ${mins} min`;
+}
+
+function isCompleted(e: WorklistEntry) {
+  return e.consultationStatus === 'CLOSED';
+}
+
 export function WorklistPage() {
   const api = usePhysicianApi();
   const navigate = useNavigate();
@@ -50,8 +47,7 @@ export function WorklistPage() {
   const afterView = searchParams.get('view') === 'after';
   const [entries, setEntries] = useState<WorklistEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortKey, setSortKey] = useState<SortKey>('readiness');
-  const [readyOnly, setReadyOnly] = useState(false);
+  const [tab, setTab] = useState<TabKey>('all');
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -63,9 +59,6 @@ export function WorklistPage() {
     setLoading(false);
   }, [api, afterView]);
 
-  // Keep a ref to the latest load so the polling interval is created exactly once and never
-  // re-subscribes when `api`/`load` identity changes between renders (which previously stacked
-  // intervals and hammered the backend).
   const loadRef = useRef(load);
   loadRef.current = load;
 
@@ -76,18 +69,25 @@ export function WorklistPage() {
     return () => window.clearInterval(timer);
   }, [afterView]);
 
+  const counts = useMemo(() => {
+    const completed = entries.filter(isCompleted).length;
+    const waiting = entries.filter((e) => e.readiness === 'READY' && !isCompleted(e)).length;
+    return { all: entries.length, waiting, completed };
+  }, [entries]);
+
   const visible = useMemo(() => {
     let rows = [...entries];
-    if (readyOnly) rows = rows.filter((e) => e.readiness === 'READY');
-    rows.sort((a, b) =>
-      sortKey === 'waiting'
-        ? b.waitingSeconds - a.waitingSeconds
-        : READINESS_RANK[a.readiness] - READINESS_RANK[b.readiness],
-    );
+    if (tab === 'waiting') rows = rows.filter((e) => e.readiness === 'READY' && !isCompleted(e));
+    else if (tab === 'completed') rows = rows.filter(isCompleted);
+    // "Sorted by time": by scheduled/entered time ascending, unknown times last.
+    rows.sort((a, b) => {
+      const ta = a.enteredAt ? Date.parse(a.enteredAt) : Number.POSITIVE_INFINITY;
+      const tb = b.enteredAt ? Date.parse(b.enteredAt) : Number.POSITIVE_INFINITY;
+      if (ta !== tb) return ta - tb;
+      return READINESS_RANK[a.readiness] - READINESS_RANK[b.readiness];
+    });
     return rows;
-  }, [entries, readyOnly, sortKey]);
-
-  const readyCount = entries.filter((e) => e.readiness === 'READY').length;
+  }, [entries, tab]);
 
   const admit = async (id: string) => {
     setBusy(id);
@@ -99,180 +99,239 @@ export function WorklistPage() {
     }
   };
 
-  const acknowledge = async (id: string) => {
-    setBusy(id);
-    try {
-      await api.acknowledgeRedFlag(id);
-      setEntries((prev) =>
-        prev.map((e) => (e.appointmentId === id ? { ...e, redFlagAcknowledged: true } : e)),
-      );
-    } finally {
-      setBusy(null);
-    }
-  };
+  const tabs: { key: TabKey; label: string; count: number }[] = [
+    { key: 'all', label: 'All', count: counts.all },
+    { key: 'waiting', label: 'Waiting', count: counts.waiting },
+    { key: 'completed', label: 'Completed', count: counts.completed },
+  ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <SectionHeader
-        title={afterView ? 'Worklist — after' : labels.worklist.title}
-        subtitle={
-          afterView
-            ? 'After the consultation: completed and at-risk patients.'
-            : `${entries.length} patients · ${readyCount} ready to see`
-        }
-        actions={
-          afterView ? (
-            <Link to="/worklist">
-              <BpButton variant="secondary" icon="arrow_back">
-                Active worklist
-              </BpButton>
-            </Link>
-          ) : (
-            <>
-              <BpSelect
-                aria-label={labels.worklist.sortBy}
-                value={sortKey}
-                onChange={(e) => setSortKey(e.target.value as SortKey)}
-                style={{ width: 'auto' }}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Toolbar: tabs (left) + sort (right), sitting above the table panel. */}
+      <div className="wl-toolbar">
+        {afterView ? (
+          <Link to="/worklist">
+            <BpButton variant="secondary" icon="arrow_back">
+              Active worklist
+            </BpButton>
+          </Link>
+        ) : (
+          <div className="wl-tabs" role="tablist" aria-label="Filter worklist">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                role="tab"
+                aria-selected={tab === t.key}
+                className="wl-tab"
+                onClick={() => setTab(t.key)}
               >
-                <option value="readiness">{labels.worklist.sortReadiness}</option>
-                <option value="waiting">{labels.worklist.sortWaiting}</option>
-              </BpSelect>
-              <BpButton
-                variant={readyOnly ? 'subtle' : 'secondary'}
-                icon={readyOnly ? 'filter_alt' : 'filter_alt_off'}
-                onClick={() => setReadyOnly((v) => !v)}
-              >
-                {labels.worklist.filterReady}
-              </BpButton>
-              <BpButton variant="secondary" icon="refresh" onClick={() => void load()}>
-                {labels.common.refresh}
-              </BpButton>
-            </>
-          )
-        }
-      />
+                {t.label}
+                <span className="wl-tab-count">{t.count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <span className="wl-sort">
+          <Icon name="swap_vert" size={16} />
+          Sorted by time
+        </span>
+      </div>
 
-      {loading ? (
-        <Card>
-          <span style={{ color: 'var(--bp-muted)' }}>{labels.common.loading}</span>
-        </Card>
-      ) : visible.length === 0 ? (
-        <Card style={{ textAlign: 'center', padding: 40 }}>
-          <Icon name="inbox" size={32} color="var(--bp-muted-2)" />
-          <p style={{ color: 'var(--bp-muted)', margin: '8px 0 0' }}>{labels.worklist.empty}</p>
-        </Card>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {visible.map((entry) => {
-            const hasRedFlag = entry.flags.includes('RED_FLAG');
-            const needsAck = hasRedFlag && !entry.redFlagAcknowledged;
-            const completed = entry.consultationStatus === 'CLOSED';
-            const atRisk = entry.technicalStatus === 'IMPAIRED';
-            const canAdmit = entry.readiness === 'READY' && !needsAck && !completed;
-            return (
-              <Card
-                key={entry.appointmentId}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                  borderLeft: `4px solid ${
-                    needsAck || atRisk
-                      ? needsAck
-                        ? 'var(--bp-danger)'
-                        : 'var(--bp-warn)'
-                      : completed
-                        ? 'var(--bp-ok-2)'
-                        : entry.readiness === 'READY'
-                          ? 'var(--bp-ok-2)'
-                          : 'var(--bp-border)'
-                  }`,
-                  opacity: completed ? 0.92 : 1,
-                }}
-              >
-                <Avatar initials={initials(entry.patientRef)} tone={needsAck ? 'amber' : 'blue'} size={44} />
+      <div className="wl-panel">
+        {loading ? (
+          <div style={{ padding: 24, color: 'var(--bp-muted)' }}>{labels.common.loading}</div>
+        ) : visible.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center' }}>
+            <Icon name="inbox" size={32} color="var(--bp-muted-2)" />
+            <p style={{ color: 'var(--bp-muted)', margin: '8px 0 0' }}>{labels.worklist.empty}</p>
+          </div>
+        ) : (
+          <table className="wl-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Patient</th>
+                <th>Status</th>
+                <th>Flags</th>
+                <th aria-label="Actions" />
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((entry) => {
+                const hasRedFlag = entry.flags.includes('RED_FLAG');
+                const completed = isCompleted(entry);
+                const atRisk = entry.technicalStatus === 'IMPAIRED';
+                const canAdmit = entry.readiness === 'READY' && !completed;
+                const otherFlags = entry.flags.filter((f) => f !== 'RED_FLAG');
 
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <strong style={{ fontSize: 15 }} data-phi="true">
-                      {entry.patientRef}
-                    </strong>
-                    <span style={{ color: 'var(--bp-muted-2)', fontSize: 12, fontFamily: 'ui-monospace, Menlo, monospace' }}>
-                      {entry.appointmentId}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 7, flexWrap: 'wrap' }}>
-                    {completed ? (
-                      <Pill tone="green" icon="task_alt">
-                        Completed · documents delivered
-                      </Pill>
-                    ) : (
-                      <Pill tone={READINESS_TONE[entry.readiness]} dot>
-                        {labels.readiness[entry.readiness]}
-                      </Pill>
-                    )}
-                    <Pill tone="neutral" icon={entry.mode === 'audio' ? 'call' : 'videocam'}>
-                      {entry.mode === 'audio' ? 'Audio' : 'Video'}
-                    </Pill>
-                    {entry.technicalStatus !== 'OK' && (
-                      <Pill tone="red" icon="wifi_off">
-                        {labels.technical[entry.technicalStatus]}
-                      </Pill>
-                    )}
-                    {entry.telemetryAvailable && (
-                      <Pill tone="blue" icon="monitor_heart">
-                        Telemetry
-                      </Pill>
-                    )}
-                    {entry.flags.map((flag) => (
-                      <Pill key={flag} tone={FLAG_TONE[flag]} icon={flag === 'RED_FLAG' ? 'warning' : undefined}>
-                        {labels.flags[flag]}
-                      </Pill>
-                    ))}
-                  </div>
-                </div>
+                return (
+                  <tr key={entry.appointmentId} className={canAdmit ? 'is-active' : undefined}>
+                    <td>
+                      <div className="wl-time">{clockOf(entry)}</div>
+                      <small className="wl-time">
+                        <Icon name={entry.mode === 'audio' ? 'call' : 'videocam'} size={14} />
+                        {entry.mode === 'audio' ? 'Audio' : 'Video'}
+                      </small>
+                    </td>
 
-                <div style={{ textAlign: 'right', flex: 'none' }}>
-                  <div style={{ fontSize: 12, color: 'var(--bp-muted)' }}>{labels.worklist.columnWaiting}</div>
-                  <div style={{ fontWeight: 700, fontFamily: 'ui-monospace, Menlo, monospace' }}>
-                    {completed ? '—' : formatWaiting(entry.waitingSeconds)}
-                  </div>
-                </div>
+                    <td>
+                      <div className="wl-patient">
+                        <Avatar initials={initials(entry.patientRef)} tone="blue" size={38} />
+                        <div style={{ minWidth: 0 }}>
+                          <div className="wl-patient-name" data-phi="true">
+                            {entry.patientRef}
+                          </div>
+                          <div className="wl-patient-id">{entry.appointmentId}</div>
+                        </div>
+                      </div>
+                    </td>
 
-                <div style={{ display: 'flex', gap: 8, flex: 'none' }}>
-                  {completed ? (
-                    <Link to={`/consultation/${entry.appointmentId}/review`}>
-                      <BpButton variant="secondary" icon="description">
-                        Summary
-                      </BpButton>
-                    </Link>
-                  ) : needsAck ? (
-                    <BpButton variant="danger" icon="warning" loading={busy === entry.appointmentId} onClick={() => void acknowledge(entry.appointmentId)}>
-                      {labels.worklist.acknowledgeRedFlag}
-                    </BpButton>
-                  ) : atRisk ? (
-                    <BpButton variant="secondary" icon="help" onClick={() => void admit(entry.appointmentId)}>
-                      Send device help
-                    </BpButton>
-                  ) : (
-                    <BpButton icon="login" disabled={!canAdmit} loading={busy === entry.appointmentId} onClick={() => void admit(entry.appointmentId)}>
-                      {labels.worklist.admit}
-                    </BpButton>
-                  )}
-                  {!completed && (
-                    <Link to={`/worklist/${entry.appointmentId}/context`}>
-                      <BpButton variant="secondary" icon="person">
-                        {labels.worklist.context}
-                      </BpButton>
-                    </Link>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                    <td>
+                      <StatusCell entry={entry} completed={completed} atRisk={atRisk} />
+                    </td>
+
+                    <td>
+                      <div className="wl-flagcell">
+                        {hasRedFlag && (
+                          <span className="wl-redflag">
+                            <Icon name="emergency" size={16} fill />
+                            {labels.flags.RED_FLAG}
+                          </span>
+                        )}
+                        {otherFlags.map((flag) => (
+                          <span key={flag} className="wl-flag">
+                            {labels.flags[flag]}
+                          </span>
+                        ))}
+                        {!hasRedFlag && otherFlags.length === 0 && (
+                          <span style={{ color: 'var(--bp-muted-2)' }} />
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="wl-actioncell">
+                      {completed ? (
+                        <button
+                          type="button"
+                          className="wl-btn"
+                          onClick={() => navigate(`/consultation/${entry.appointmentId}/summary`)}
+                        >
+                          View summary
+                        </button>
+                      ) : canAdmit ? (
+                        <>
+                          <button
+                            type="button"
+                            className="wl-btn wl-btn-primary"
+                            disabled={busy === entry.appointmentId}
+                            onClick={() => void admit(entry.appointmentId)}
+                          >
+                            Review &amp; join
+                          </button>
+                          <button
+                            type="button"
+                            className="wl-link"
+                            onClick={() => navigate(`/worklist/${entry.appointmentId}/context`)}
+                          >
+                            <Icon name="schedule" size={15} />
+                            Notify delay
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className="wl-btn"
+                          onClick={() => navigate(`/worklist/${entry.appointmentId}/context`)}
+                        >
+                          View details
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
+  );
+}
+
+/** The Status column: a subtle pill plus a muted sub-line (e.g. "Waiting 8 min"). */
+function StatusCell({
+  entry,
+  completed,
+  atRisk,
+}: {
+  entry: WorklistEntry;
+  completed: boolean;
+  atRisk: boolean;
+}) {
+  if (completed) {
+    return (
+      <>
+        <span className="wl-chip wl-chip-green">
+          <Icon name="task_alt" size={14} />
+          Completed
+        </span>
+        <div className="wl-substatus">Docs delivered</div>
+      </>
+    );
+  }
+  if (entry.consultationStatus === 'OPEN_DOCTOR' || entry.consultationStatus === 'STARTED') {
+    return (
+      <>
+        <span className="wl-chip wl-chip-blue">
+          <Icon name="videocam" size={14} />
+          In consultation
+        </span>
+        {entry.enteredAt && (
+          <div className="wl-substatus">
+            Since{' '}
+            {new Date(entry.enteredAt).toLocaleTimeString('en-GB', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </div>
+        )}
+      </>
+    );
+  }
+  if (atRisk) {
+    return (
+      <>
+        <span className="wl-chip wl-chip-red">
+          <Icon name="wifi_off" size={14} />
+          {labels.technical[entry.technicalStatus]}
+        </span>
+        <div className="wl-substatus">Device check needed</div>
+      </>
+    );
+  }
+  if (entry.readiness === 'READY') {
+    return (
+      <>
+        <span className="wl-chip wl-chip-green">
+          <Icon name="check_circle" size={14} />
+          Ready
+        </span>
+        <div className="wl-substatus">{waitingLabel(entry.waitingSeconds)}</div>
+      </>
+    );
+  }
+  if (entry.readiness === 'IN_PROGRESS') {
+    return (
+      <span className="wl-chip wl-chip-amber">
+        <Icon name="hourglass_top" size={14} />
+        Preparing
+      </span>
+    );
+  }
+  return (
+    <span className="wl-chip wl-chip-neutral">
+      <Icon name="schedule" size={14} />
+      Not arrived
+    </span>
   );
 }

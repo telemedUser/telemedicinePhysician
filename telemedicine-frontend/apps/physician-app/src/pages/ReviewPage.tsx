@@ -48,7 +48,7 @@ export function ReviewPage() {
         </span>
       </Card>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+      <div className="grid-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
         {sections.map((s) => (
           <Card key={s.key} style={rejected ? { opacity: 0.5 } : undefined}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>

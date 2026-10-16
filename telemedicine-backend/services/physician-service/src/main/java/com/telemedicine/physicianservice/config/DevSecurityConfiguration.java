@@ -1,13 +1,12 @@
 package com.telemedicine.physicianservice.config;
 
-import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
  * Local-development security ONLY (active on the {@code dev} profile). Declaring a {@link
@@ -31,13 +30,10 @@ public class DevSecurityConfiguration {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .anonymous(
-                        anon ->
-                                anon.principal("dev-physician")
-                                        .authorities(
-                                                List.of(
-                                                        new SimpleGrantedAuthority("ROLE_PHYSICIAN"),
-                                                        new SimpleGrantedAuthority("ROLE_ADMIN"))));
+                // Resolve the physician identity per request from the X-Physician-Id header so the
+                // worklist is scoped to whichever doctor is signed in on the physician app.
+                .addFilterBefore(
+                        new DevPhysicianAuthFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }

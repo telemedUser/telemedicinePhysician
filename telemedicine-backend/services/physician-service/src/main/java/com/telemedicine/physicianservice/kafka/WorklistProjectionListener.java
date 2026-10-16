@@ -6,6 +6,7 @@ import com.telemedicine.common.events.DomainEventListener;
 import com.telemedicine.common.events.EventEnvelope;
 import com.telemedicine.common.events.EventTypes;
 import com.telemedicine.common.events.consumer.IdempotentConsumer;
+import com.telemedicine.common.events.payload.AppointmentCreated;
 import com.telemedicine.common.events.payload.DeviceTestCompleted;
 import com.telemedicine.common.events.payload.PatientEnteredWaitingRoom;
 import com.telemedicine.common.events.payload.StatusChanged;
@@ -29,7 +30,7 @@ import org.springframework.stereotype.Component;
 public class WorklistProjectionListener {
 
     private static final Logger log = LoggerFactory.getLogger(WorklistProjectionListener.class);
-    private static final String DEFAULT_MARKET = "CL";
+    private static final String DEFAULT_MARKET = "IN";
 
     private final ObjectMapper eventObjectMapper;
     private final WorklistItemRepository worklistItemRepository;
@@ -39,6 +40,35 @@ public class WorklistProjectionListener {
             WorklistItemRepository worklistItemRepository) {
         this.eventObjectMapper = eventObjectMapper;
         this.worklistItemRepository = worklistItemRepository;
+    }
+
+    /**
+     * A patient booking was created (by patient-booking-service). Seeds the worklist item so the
+     * booked patient appears on the assigned physician's worklist before they enter the waiting
+     * room. The item is owned by the physician in {@code physicianRef}; later waiting-room and
+     * quality events advance its readiness and status.
+     */
+    @DomainEventListener(EventTypes.APPOINTMENT_CREATED)
+    @IdempotentConsumer
+    public void onAppointmentCreated(ConsumerRecord<String, byte[]> record, Acknowledgment ack)
+            throws Exception {
+        EventEnvelope<AppointmentCreated> envelope =
+                readEnvelope(record.value(), AppointmentCreated.class);
+        AppointmentCreated payload = envelope.payload();
+        WorklistItemEntity item = findOrCreate(payload.appointmentId());
+        if (payload.physicianRef() != null) {
+            item.setProviderId(payload.physicianRef());
+        }
+        item.setPatientRef(payload.patientRef());
+        if (payload.modality() != null) {
+            item.setMode(payload.modality().toLowerCase(java.util.Locale.ROOT));
+        }
+        item.setConsultationStatus("SCHEDULED");
+        if (item.getFlags() == null || item.getFlags().isBlank()) {
+            item.setFlags("[\"FIRST_VISIT\"]");
+        }
+        save(item);
+        ack.acknowledge();
     }
 
     @DomainEventListener(EventTypes.PATIENT_ENTERED_WAITING_ROOM)
@@ -91,10 +121,52 @@ public class WorklistProjectionListener {
                 .orElseGet(() -> new WorklistItemEntity(appointmentId, DEFAULT_MARKET));
     }
 
+    /**
+     * Persist the projected item, tolerating the insert race where two events for the same new
+     * appointment are consumed back to back: if a concurrent insert already created the row, re-read
+     * it, copy the fields this handler set, and save again as an update. Keeps each handler
+     * idempotent and order-tolerant (TM-INT-013).
+     */
     private void save(WorklistItemEntity item) {
         item.setUpdatedAt(Instant.now());
-        worklistItemRepository.save(item);
+        try {
+            worklistItemRepository.saveAndFlush(item);
+        } catch (org.springframework.dao.DataIntegrityViolationException duplicate) {
+            WorklistItemEntity existing =
+                    worklistItemRepository.findById(item.getAppointmentId()).orElse(null);
+            if (existing == null) {
+                throw duplicate;
+            }
+            copyInto(item, existing);
+            existing.setUpdatedAt(Instant.now());
+            worklistItemRepository.saveAndFlush(existing);
+            log.debug("Worklist item {} merged after insert race", item.getAppointmentId());
+            return;
+        }
         log.debug("Worklist item {} updated", item.getAppointmentId());
+    }
+
+    /** Copy the mutable projection fields from a freshly-built item onto the persisted row. */
+    private void copyInto(WorklistItemEntity from, WorklistItemEntity to) {
+        if (from.getProviderId() != null) {
+            to.setProviderId(from.getProviderId());
+        }
+        if (from.getPatientRef() != null) {
+            to.setPatientRef(from.getPatientRef());
+        }
+        if (from.getMode() != null) {
+            to.setMode(from.getMode());
+        }
+        if (from.getEnteredAt() != null) {
+            to.setEnteredAt(from.getEnteredAt());
+        }
+        to.setReadiness(from.getReadiness());
+        to.setConsultationStatus(from.getConsultationStatus());
+        to.setTechnicalStatus(from.getTechnicalStatus());
+        to.setTelemetryAvailable(from.isTelemetryAvailable());
+        if (from.getFlags() != null) {
+            to.setFlags(from.getFlags());
+        }
     }
 
     private <T> EventEnvelope<T> readEnvelope(byte[] payload, Class<T> payloadType) throws Exception {

@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { RequireAuth, RequireRole } from '@telemedicine/auth';
 import { AppProviders } from './components/AppProviders';
 import { Avatar, Icon } from './ui/primitives';
-import { CURRENT_PHYSICIAN } from './data/mockData';
+import { PhysicianLoginPage } from './pages/PhysicianLoginPage';
+import {
+  clearPhysicianSession,
+  getPhysicianSession,
+  type PhysicianSession,
+} from './auth/physicianSession';
 import { WorklistPage } from './pages/WorklistPage';
 import { PatientContextPage } from './pages/PatientContextPage';
 import { ConsultationWorkspacePage } from './pages/ConsultationWorkspacePage';
@@ -16,6 +21,7 @@ import { WithdrawnPage } from './pages/WithdrawnPage';
 import { PreviousPatientsPage } from './pages/PreviousPatientsPage';
 import { ProvidersPage } from './pages/ProvidersPage';
 import { ProviderDetailPage } from './pages/ProviderDetailPage';
+import { SummaryPage } from './pages/SummaryPage';
 
 const NAV = [
   { to: '/worklist', label: 'Worklist', icon: 'list_alt' },
@@ -23,7 +29,7 @@ const NAV = [
   { to: '/providers', label: 'Physicians', icon: 'stethoscope' },
 ];
 
-function TopBar({ clock }: { clock: string }) {
+function TopBar({ clock, onToggleNav }: { clock: string; onToggleNav: () => void }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
@@ -34,6 +40,7 @@ function TopBar({ clock }: { clock: string }) {
 
   return (
     <header
+      className="app-topbar"
       style={{
         height: 56,
         background: 'var(--bp-navy)',
@@ -45,6 +52,9 @@ function TopBar({ clock }: { clock: string }) {
         flex: 'none',
       }}
     >
+      <button type="button" className="app-nav-toggle" aria-label="Toggle navigation" onClick={onToggleNav}>
+        <Icon name="menu" size={22} color="#fff" />
+      </button>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span
           style={{
@@ -133,12 +143,13 @@ function TopBar({ clock }: { clock: string }) {
   );
 }
 
-function SideNav() {
+function SideNav({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
   const isActive = (to: string) => location.pathname.startsWith(to);
   return (
     <nav
       aria-label="Navigation"
+      className="app-sidebar"
       style={{
         width: 232,
         flex: 'none',
@@ -169,6 +180,7 @@ function SideNav() {
           <Link
             key={item.to}
             to={item.to}
+            onClick={onNavigate}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -206,6 +218,9 @@ function SideNav() {
 
 function AuthedShell() {
   const [clock, setClock] = useState('');
+  const [navOpen, setNavOpen] = useState(false);
+  const location = useLocation();
+
   useEffect(() => {
     const tick = () =>
       setClock(
@@ -220,12 +235,22 @@ function AuthedShell() {
     return () => window.clearInterval(id);
   }, []);
 
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setNavOpen(false);
+  }, [location.pathname]);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <TopBar clock={clock} />
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <SideNav />
-        <main style={{ flex: 1, overflow: 'auto', padding: '24px 28px' }}>
+    <div
+      className="app-shell"
+      data-nav-open={navOpen}
+      style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}
+    >
+      <TopBar clock={clock} onToggleNav={() => setNavOpen((v) => !v)} />
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
+        <SideNav onNavigate={() => setNavOpen(false)} />
+        <div className="app-scrim" onClick={() => setNavOpen(false)} aria-hidden="true" />
+        <main className="app-main" style={{ flex: 1, overflow: 'auto', padding: '24px 28px' }}>
           <div style={{ maxWidth: 1040, margin: '0 auto', animation: 'bpIn .25s ease' }}>
             <Routes>
               <Route path="/" element={<Navigate to="/worklist" replace />} />
@@ -234,6 +259,7 @@ function AuthedShell() {
               <Route path="/consultation/:appointmentId" element={<ConsultationWorkspacePage />} />
               <Route path="/consultation/:appointmentId/documentation" element={<DocumentationPage />} />
               <Route path="/consultation/:appointmentId/review" element={<ReviewPage />} />
+              <Route path="/consultation/:appointmentId/summary" element={<SummaryPage />} />
               <Route path="/consultation/:appointmentId/send" element={<SendPage />} />
               <Route path="/consultation/:appointmentId/close" element={<ClosePage />} />
               <Route path="/consultation/:appointmentId/withdrawn" element={<WithdrawnPage />} />

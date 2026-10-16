@@ -143,3 +143,611 @@ h4 {
   scrollbar-width: thin;
   scrollbar-color: var(--bp-border) transparent;
 }
+
+/* ================================================================== */
+/* Responsive layout                                                  */
+/* ================================================================== */
+html,
+body {
+  overflow-x: hidden;
+}
+
+/* App shell: sidebar + main. Hooks are set in App.tsx (.app-shell / .app-sidebar /
+   .app-main / .app-topbar / .app-nav-toggle / .app-scrim). On desktop the toggle is hidden
+   and the sidebar is static; below 900px the sidebar slides in as an off-canvas drawer. */
+.app-nav-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  align-items: center;
+}
+.app-nav-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.app-scrim {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .app-nav-toggle {
+    display: inline-flex;
+  }
+  .app-sidebar {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: var(--bp-shadow-lg);
+  }
+  .app-shell[data-nav-open='true'] .app-sidebar {
+    transform: translateX(0);
+  }
+  .app-shell[data-nav-open='true'] .app-scrim {
+    display: block;
+    position: fixed;
+    inset: 56px 0 0 0;
+    background: rgba(16, 41, 74, 0.4);
+    z-index: 35;
+  }
+  .app-main {
+    padding: 18px 16px !important;
+  }
+}
+
+/* Worklist rows and any inline flex "card rows" wrap instead of overflowing. */
+@media (max-width: 820px) {
+  .wl-row {
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+  }
+  .wl-row .wl-info {
+    flex: 1 1 100% !important;
+    order: 1;
+  }
+  .wl-row .wl-waiting {
+    order: 2;
+    text-align: left !important;
+  }
+  .wl-row .wl-actions {
+    order: 3;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .wl-row .wl-actions a,
+  .wl-row .wl-actions button {
+    flex: 1 1 auto;
+  }
+}
+
+/* Section headers (title + actions) stack their actions below on small screens. */
+@media (max-width: 640px) {
+  .sh-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+/* Two/three-column page grids collapse to a single column. */
+@media (max-width: 900px) {
+  .grid-2col,
+  .grid-3col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Inline 2-column grid (controlled fully by CSS so it collapses cleanly). */
+.grid-2col-inline {
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 760px) {
+  .grid-2col-inline {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ================================================================== */
+/* Worklist — subtle table treatment (matches the reference design)   */
+/* ================================================================== */
+.wl-panel {
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-border-2);
+  border-radius: var(--bp-radius);
+  box-shadow: var(--bp-shadow);
+  overflow: hidden;
+}
+
+.wl-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  flex-wrap: wrap;
+}
+.wl-panel-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--bp-text);
+}
+
+/* Segmented tab chips: All / Waiting / Completed */
+.wl-tabs {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--bp-surface-2);
+  border: 1px solid var(--bp-border-2);
+  border-radius: var(--bp-pill);
+  padding: 3px;
+}
+.wl-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: none;
+  background: transparent;
+  color: var(--bp-muted);
+  font: 600 13px var(--font-family, Figtree), sans-serif;
+  padding: 6px 14px;
+  border-radius: var(--bp-pill);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wl-tab[aria-selected='true'] {
+  background: var(--bp-surface);
+  color: var(--bp-navy);
+  box-shadow: var(--bp-shadow);
+}
+.wl-tab-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--bp-pill);
+  background: var(--bp-blue-tint);
+  color: var(--bp-blue-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+.wl-tab[aria-selected='false'] .wl-tab-count {
+  background: #e7eaee;
+  color: var(--bp-muted);
+}
+
+.wl-sort {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--bp-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Table */
+.wl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.wl-table thead th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bp-muted);
+  background: var(--bp-surface-2);
+  border-top: 1px solid var(--bp-border-2);
+  border-bottom: 1px solid var(--bp-border-2);
+  padding: 10px 18px;
+  white-space: nowrap;
+}
+.wl-table tbody td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--bp-border-2);
+  vertical-align: middle;
+  color: var(--bp-text);
+}
+.wl-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.wl-table tbody tr.is-active {
+  background: #f0faf3; /* subtle pale-green highlight for the ready/active row */
+}
+
+.wl-time {
+  font-weight: 700;
+  color: var(--bp-text);
+  font-variant-numeric: tabular-nums;
+}
+.wl-time small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  color: var(--bp-muted);
+  margin-top: 2px;
+}
+.wl-patient {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.wl-patient-name {
+  font-weight: 600;
+  color: var(--bp-text);
+}
+.wl-patient-id {
+  font-size: 12px;
+  color: var(--bp-muted-2);
+  font-family: ui-monospace, Menlo, monospace;
+}
+.wl-substatus {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--bp-muted);
+}
+.wl-flagcell {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.wl-actioncell {
+  text-align: right;
+  white-space: nowrap;
+}
+.wl-actioncell .wl-secondary-link {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bp-blue-dark);
+}
+
+/* Subtle, low-saturation status pill (lighter than the generic Pill). */
+.wl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: var(--bp-pill);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.wl-chip-neutral { background: #eef0f2; color: var(--bp-muted); }
+.wl-chip-green   { background: var(--bp-ok-bg); color: var(--bp-ok); }
+.wl-chip-blue    { background: var(--bp-info-bg); color: var(--bp-info); }
+.wl-chip-amber   { background: var(--bp-warn-bg); color: var(--bp-warn); }
+.wl-chip-red     { background: var(--bp-danger-bg); color: var(--bp-danger); }
+
+/* Outlined "subtle" flag tag used in the Flags column. */
+.wl-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--bp-pill);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-border);
+  color: var(--bp-muted);
+}
+.wl-flag-red { color: var(--bp-danger); border-color: #e9c2c2; background: var(--bp-danger-bg); }
+
+/* Responsive: collapse the table to stacked cards below 820px. */
+@media (max-width: 820px) {
+  .wl-table,
+  .wl-table tbody,
+  .wl-table tr,
+  .wl-table td {
+    display: block;
+    width: 100%;
+  }
+  .wl-table thead {
+    display: none;
+  }
+  .wl-table tbody tr {
+    border-bottom: 1px solid var(--bp-border-2);
+    padding: 12px 16px;
+  }
+  .wl-table tbody td {
+    border: none;
+    padding: 4px 0;
+  }
+  .wl-actioncell {
+    text-align: left;
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .wl-actioncell .wl-secondary-link {
+    margin-top: 0;
+  }
+}
+
+/* ================================================================== */
+/* Worklist — exact reference refinements                             */
+/* ================================================================== */
+
+/* Toolbar row that sits ABOVE the table panel: tabs left, sort right. */
+.wl-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Pill-shaped action buttons used in the worklist action column. */
+.wl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--bp-pill);
+  font: 600 13px var(--font-family, Figtree), sans-serif;
+  padding: 7px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1.5px solid var(--bp-blue);
+  background: var(--bp-surface);
+  color: var(--bp-blue-dark);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.wl-btn:hover {
+  background: var(--bp-blue-tint);
+}
+.wl-btn-primary {
+  background: var(--bp-blue);
+  border-color: var(--bp-blue);
+  color: #fff;
+}
+.wl-btn-primary:hover {
+  background: var(--bp-blue-dark);
+}
+.wl-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* "Notify delay" — plain text link with an icon, under the primary action. */
+.wl-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: 600 13px var(--font-family, Figtree), sans-serif;
+  color: var(--bp-blue-dark);
+}
+.wl-link:hover {
+  text-decoration: underline;
+}
+
+/* Red flag rendered as plain red text with a star — not a pill. */
+.wl-redflag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--bp-danger);
+  font-size: 13px;
+  font-weight: 600;
+}
+.wl-redflag .material-symbols-rounded {
+  font-size: 16px;
+}
+
+/* ================================================================== */
+/* Shared page layout language (summary / detail pages)              */
+/* ================================================================== */
+
+/* Back link: "← Worklist" */
+.pg-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--bp-blue);
+  font: 600 14px var(--font-family, Figtree), sans-serif;
+}
+.pg-back:hover {
+  color: var(--bp-blue-dark);
+}
+
+/* Page header: avatar + name + status pill (left), status banner (right). */
+.pg-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--bp-border-2);
+}
+.pg-header-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pg-header-name {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--bp-navy);
+  letter-spacing: -0.01em;
+}
+.pg-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+  color: var(--bp-muted);
+  font-size: 14px;
+}
+.pg-header-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Large rounded status banner on the right of the header. */
+.pg-banner {
+  flex: 0 1 360px;
+  background: var(--bp-surface-2);
+  border: 1px solid var(--bp-border-2);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+.pg-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--bp-text);
+}
+.pg-banner-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  color: var(--bp-muted);
+  font-size: 13px;
+}
+
+/* Two-column page body: content (left) + info rail (right). */
+.pg-body {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 28px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .pg-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Left column labelled section: overline + icon lead + body. */
+.pg-section {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--bp-border-2);
+}
+.pg-section:last-child {
+  border-bottom: none;
+}
+.pg-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+.pg-section-lead {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--bp-text);
+  font-size: 15px;
+  line-height: 1.55;
+}
+.pg-section-lead strong {
+  color: var(--bp-text);
+}
+.pg-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--bp-blue);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+.pg-link:hover {
+  color: var(--bp-blue-dark);
+}
+
+/* Right rail soft-grey info card. */
+.pg-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pg-infocard {
+  background: var(--bp-surface-2);
+  border: 1px solid var(--bp-border-2);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+.pg-infocard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.pg-infocard-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Checklist item (green check + bold + sub-line). */
+.pg-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 7px 0;
+}
+.pg-check + .pg-check {
+  border-top: 1px solid var(--bp-border-2);
+}
+.pg-check-body strong {
+  display: block;
+  font-size: 14px;
+  color: var(--bp-text);
+}
+.pg-check-body span {
+  font-size: 13px;
+  color: var(--bp-muted);
+}
+
+/* Key/value row (e.g. payment line). */
+.pg-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  padding: 4px 0;
+  color: var(--bp-text-2);
+}
+.pg-kv-total {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--bp-border-2);
+  font-weight: 700;
+  color: var(--bp-text);
+}
+.pg-kv-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--bp-muted);
+}

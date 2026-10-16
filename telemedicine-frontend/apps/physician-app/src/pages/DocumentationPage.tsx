@@ -155,7 +155,7 @@ export function DocumentationPage() {
           {activeTab === 'prescription' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {meds.map((med, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.4fr', gap: 10, padding: 12, background: 'var(--bp-surface-2)', borderRadius: 8 }}>
+                <div key={i} className="grid-3col" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.4fr', gap: 10, padding: 12, background: 'var(--bp-surface-2)', borderRadius: 8 }}>
                   <Field label={labels.documentation.drugName}>
                     <BpInput value={med.drugName} onChange={(e) => setMed(i, 'drugName', e.target.value)} />
                   </Field>
@@ -177,7 +177,7 @@ export function DocumentationPage() {
 
           {activeTab === 'medicalLeave' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <Field label={labels.documentation.startDate}>
                   <BpInput type="date" value={draft.medicalLeave?.startDate ?? ''} onChange={(e) => setLeave('startDate', e.target.value)} />
                 </Field>

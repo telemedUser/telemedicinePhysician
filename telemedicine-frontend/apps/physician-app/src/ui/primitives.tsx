@@ -250,7 +250,7 @@ export function SectionHeader({
           <p style={{ margin: '4px 0 0', color: 'var(--bp-muted)', fontSize: 14 }}>{subtitle}</p>
         )}
       </div>
-      {actions && <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>{actions}</div>}
+      {actions && <div className="sh-actions" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>{actions}</div>}
     </div>
   );
 }
@@ -310,4 +310,145 @@ export function BpTextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaEleme
 }
 export function BpSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} style={{ ...controlStyle, cursor: 'pointer', ...props.style }} />;
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared detail-page layout primitives (summary / context / review). */
+/* Encode the Connected Care page pattern so every page shares the     */
+/* same colours and structure.                                         */
+/* ------------------------------------------------------------------ */
+
+/** "← Worklist" style back link. */
+export function PageBack({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" className="pg-back" onClick={onClick}>
+      <Icon name="arrow_back" size={18} />
+      {label}
+    </button>
+  );
+}
+
+/** Page header: avatar + name + status pill on the left, a status banner on the right. */
+export function PageHeader({
+  initials,
+  name,
+  meta,
+  statusPill,
+  banner,
+}: {
+  initials: string;
+  name: string;
+  meta?: ReactNode;
+  statusPill?: ReactNode;
+  banner?: { icon: string; title: ReactNode; sub?: ReactNode };
+}) {
+  return (
+    <div className="pg-header">
+      <div className="pg-header-id">
+        <Avatar initials={initials} size={48} tone="blue" />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <h1 className="pg-header-name" data-phi="true">
+              {name}
+            </h1>
+            {statusPill}
+          </div>
+          {meta && <div className="pg-header-meta">{meta}</div>}
+        </div>
+      </div>
+      {banner && (
+        <div className="pg-banner">
+          <div className="pg-banner-title">
+            <Icon name={banner.icon} size={22} color="var(--bp-ok)" />
+            {banner.title}
+          </div>
+          {banner.sub && <div className="pg-banner-sub">{banner.sub}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Two-column body: main content + a right info rail. */
+export function PageBody({ main, rail }: { main: ReactNode; rail?: ReactNode }) {
+  return (
+    <div className="pg-body">
+      <div>{main}</div>
+      {rail && <div className="pg-rail">{rail}</div>}
+    </div>
+  );
+}
+
+/** Left-column labelled section (overline + content). */
+export function Section({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="pg-section">
+      <div className="pg-section-label">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+/** Soft-grey right-rail info card with an overline title and optional right accessory. */
+export function InfoCard({
+  title,
+  accessory,
+  children,
+}: {
+  title: string;
+  accessory?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="pg-infocard">
+      <div className="pg-infocard-head">
+        <span className="pg-infocard-title">{title}</span>
+        {accessory}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Checklist item: green check, bold title, muted sub-line. */
+export function CheckItem({
+  title,
+  sub,
+  done = true,
+}: {
+  title: ReactNode;
+  sub?: ReactNode;
+  done?: boolean;
+}) {
+  return (
+    <div className="pg-check">
+      <Icon
+        name={done ? 'check_circle' : 'radio_button_unchecked'}
+        size={18}
+        color={done ? 'var(--bp-ok)' : 'var(--bp-muted-2)'}
+      />
+      <div className="pg-check-body">
+        <strong>{title}</strong>
+        {sub && <span>{sub}</span>}
+      </div>
+    </div>
+  );
+}
+
+/** A key/value row (e.g. a payment line). */
+export function KeyValue({
+  label,
+  value,
+  total = false,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  total?: boolean;
+}) {
+  return (
+    <div className={total ? 'pg-kv pg-kv-total' : 'pg-kv'}>
+      <span>{label}</span>
+      <span>{value}</span>
+    </div>
+  );
 }
