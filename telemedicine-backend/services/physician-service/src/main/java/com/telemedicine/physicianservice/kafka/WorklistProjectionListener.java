@@ -7,9 +7,12 @@ import com.telemedicine.common.events.EventEnvelope;
 import com.telemedicine.common.events.EventTypes;
 import com.telemedicine.common.events.consumer.IdempotentConsumer;
 import com.telemedicine.common.events.payload.AppointmentCreated;
+import com.telemedicine.common.events.payload.ConsultationContextPublished;
 import com.telemedicine.common.events.payload.DeviceTestCompleted;
 import com.telemedicine.common.events.payload.PatientEnteredWaitingRoom;
 import com.telemedicine.common.events.payload.StatusChanged;
+import com.telemedicine.physicianservice.domain.detail.PatientDetailEntity;
+import com.telemedicine.physicianservice.domain.detail.PatientDetailRepository;
 import com.telemedicine.physicianservice.domain.worklist.WorklistItemEntity;
 import com.telemedicine.physicianservice.domain.worklist.WorklistItemRepository;
 import java.time.Instant;
@@ -34,12 +37,15 @@ public class WorklistProjectionListener {
 
     private final ObjectMapper eventObjectMapper;
     private final WorklistItemRepository worklistItemRepository;
+    private final PatientDetailRepository patientDetailRepository;
 
     public WorklistProjectionListener(
             @Qualifier("eventObjectMapper") ObjectMapper eventObjectMapper,
-            WorklistItemRepository worklistItemRepository) {
+            WorklistItemRepository worklistItemRepository,
+            PatientDetailRepository patientDetailRepository) {
         this.eventObjectMapper = eventObjectMapper;
         this.worklistItemRepository = worklistItemRepository;
+        this.patientDetailRepository = patientDetailRepository;
     }
 
     /**
@@ -63,6 +69,9 @@ public class WorklistProjectionListener {
         if (payload.modality() != null) {
             item.setMode(payload.modality().toLowerCase(java.util.Locale.ROOT));
         }
+        if (payload.scheduledAt() != null) {
+            item.setScheduledAt(payload.scheduledAt());
+        }
         item.setConsultationStatus("SCHEDULED");
         if (item.getFlags() == null || item.getFlags().isBlank()) {
             item.setFlags("[\"FIRST_VISIT\"]");
@@ -81,7 +90,12 @@ public class WorklistProjectionListener {
         WorklistItemEntity item = findOrCreate(payload.appointmentId());
         item.setPatientRef(payload.patientRef());
         item.setEnteredAt(payload.enteredAt());
-        item.setReadiness("IN_PROGRESS");
+        // Entering the waiting room means "arrived, checks in progress". Do NOT regress readiness
+        // if the DeviceTestCompleted event already advanced it to READY (events for the same join
+        // arrive on independent topics, so ordering is not guaranteed — TM-INT-013).
+        if (!"READY".equals(item.getReadiness())) {
+            item.setReadiness("IN_PROGRESS");
+        }
         save(item);
         ack.acknowledge();
     }
@@ -112,6 +126,49 @@ public class WorklistProjectionListener {
             item.setConsultationStatus(payload.toStatus().toUpperCase(java.util.Locale.ROOT));
         }
         save(item);
+        ack.acknowledge();
+    }
+
+    /**
+     * The patient-booking-service published the review context for an appointment (prototype D-03).
+     * Projects it into the {@code patient_detail} read model that backs the physician detail page.
+     * Last-writer-wins on appointmentId; stores only what the event carries.
+     */
+    @DomainEventListener(EventTypes.CONSULTATION_CONTEXT_PUBLISHED)
+    @IdempotentConsumer
+    public void onConsultationContext(ConsumerRecord<String, byte[]> record, Acknowledgment ack)
+            throws Exception {
+        EventEnvelope<ConsultationContextPublished> envelope =
+                readEnvelope(record.value(), ConsultationContextPublished.class);
+        ConsultationContextPublished p = envelope.payload();
+
+        PatientDetailEntity item =
+                patientDetailRepository
+                        .findById(p.appointmentId())
+                        .orElseGet(() -> new PatientDetailEntity(p.appointmentId(), DEFAULT_MARKET));
+        item.setPatientDisplay(p.patientDisplay());
+        item.setAgeYears(p.ageYears());
+        item.setSexCode(p.sexCode());
+        item.setCity(p.city());
+        item.setInsuranceScheme(p.insuranceScheme());
+        item.setNationalIdMasked(p.nationalIdMasked());
+        item.setModality(p.modality());
+        item.setVisitType(p.visitType());
+        item.setScheduledAt(p.scheduledAt());
+        item.setSeverityScore(p.severityScore());
+        item.setSymptomDurationCode(p.symptomDurationCode());
+        item.setSymptomCount(p.symptomCount());
+        item.setAttachmentCount(p.attachmentCount());
+        item.setRedFlag(p.redFlag());
+        item.setConsultationFeeMinor(p.consultationFeeMinor());
+        item.setVoucherMinor(p.voucherMinor());
+        item.setAmountPaidMinor(p.amountPaidMinor());
+        item.setCurrency(p.currency() != null ? p.currency() : "INR");
+        item.setPaymentStatus(p.paymentStatus());
+        item.setContextJson(p.clinicalContextJson());
+        item.setUpdatedAt(Instant.now());
+        patientDetailRepository.save(item);
+        log.debug("Patient detail projected for {}", p.appointmentId());
         ack.acknowledge();
     }
 
@@ -160,7 +217,14 @@ public class WorklistProjectionListener {
         if (from.getEnteredAt() != null) {
             to.setEnteredAt(from.getEnteredAt());
         }
-        to.setReadiness(from.getReadiness());
+        if (from.getScheduledAt() != null) {
+            to.setScheduledAt(from.getScheduledAt());
+        }
+        // Readiness only moves forward: a persisted READY (device check passed) is not regressed by
+        // a racing waiting-room event that merges IN_PROGRESS/NOT_READY on top of it.
+        if (!"READY".equals(to.getReadiness())) {
+            to.setReadiness(from.getReadiness());
+        }
         to.setConsultationStatus(from.getConsultationStatus());
         to.setTechnicalStatus(from.getTechnicalStatus());
         to.setTelemetryAvailable(from.isTelemetryAvailable());

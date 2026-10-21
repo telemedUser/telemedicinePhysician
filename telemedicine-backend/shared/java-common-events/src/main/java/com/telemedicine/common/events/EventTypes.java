@@ -35,6 +35,9 @@ public final class EventTypes {
     public static final String PATIENT_ENTERED_WAITING_ROOM = "PatientEnteredWaitingRoom";
     public static final String STATUS_CHANGED = "StatusChanged";
 
+    // --- Consultation context for physician review (patient-booking-service) ---
+    public static final String CONSULTATION_CONTEXT_PUBLISHED = "ConsultationContextPublished";
+
     // --- Video consultation (video-service) ---
     public static final String VIDEO_SESSION_CREATED = "VideoSessionCreated";
     public static final String VIDEO_SESSION_STARTED = "VideoSessionStarted";
@@ -78,6 +81,7 @@ public final class EventTypes {
                     DEVICE_TEST_COMPLETED,
                     PATIENT_ENTERED_WAITING_ROOM,
                     STATUS_CHANGED,
+                    CONSULTATION_CONTEXT_PUBLISHED,
                     VIDEO_SESSION_CREATED,
                     VIDEO_SESSION_STARTED,
                     VIDEO_SESSION_ENDED,

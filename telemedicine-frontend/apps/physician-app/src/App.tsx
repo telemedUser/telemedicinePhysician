@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
-import { useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { RequireAuth, RequireRole } from '@telemedicine/auth';
 import { AppProviders } from './components/AppProviders';
 import { Avatar, Icon } from './ui/primitives';
+import { CURRENT_PHYSICIAN } from './data/mockData';
 import { PhysicianLoginPage } from './pages/PhysicianLoginPage';
 import {
   clearPhysicianSession,
   getPhysicianSession,
   type PhysicianSession,
 } from './auth/physicianSession';
+import { HomePage } from './pages/HomePage';
 import { WorklistPage } from './pages/WorklistPage';
 import { PatientContextPage } from './pages/PatientContextPage';
+import { PatientReviewPage } from './pages/PatientReviewPage';
 import { ConsultationWorkspacePage } from './pages/ConsultationWorkspacePage';
 import { DocumentationPage } from './pages/DocumentationPage';
 import { ReviewPage } from './pages/ReviewPage';
@@ -19,19 +21,34 @@ import { SendPage } from './pages/SendPage';
 import { ClosePage } from './pages/ClosePage';
 import { WithdrawnPage } from './pages/WithdrawnPage';
 import { PreviousPatientsPage } from './pages/PreviousPatientsPage';
-import { ProvidersPage } from './pages/ProvidersPage';
-import { ProviderDetailPage } from './pages/ProviderDetailPage';
 import { SummaryPage } from './pages/SummaryPage';
 
 const NAV = [
+  { to: '/home', label: 'Home', icon: 'home' },
   { to: '/worklist', label: 'Worklist', icon: 'list_alt' },
   { to: '/previous', label: 'Previous patients', icon: 'history' },
-  { to: '/providers', label: 'Physicians', icon: 'stethoscope' },
 ];
 
-function TopBar({ clock, onToggleNav }: { clock: string; onToggleNav: () => void }) {
+function TopBar({
+  clock,
+  onToggleNav,
+  session,
+  onSignOut,
+}: {
+  clock: string;
+  onToggleNav: () => void;
+  session: PhysicianSession;
+  onSignOut: () => void;
+}) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+
+  const docInitials = session.displayName
+    .replace(/^(Dr\.?|Dra\.?)\s*/i, '')
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
 
   const runSearch = () => {
     const q = search.trim();
@@ -136,9 +153,18 @@ function TopBar({ clock, onToggleNav }: { clock: string; onToggleNav: () => void
           fontSize: 13,
         }}
       >
-        <Avatar initials={CURRENT_PHYSICIAN.initials} size={24} />
-        {CURRENT_PHYSICIAN.name}
+        <Avatar initials={docInitials} size={24} />
+        {session.displayName}
       </span>
+      <button
+        type="button"
+        aria-label="Sign out"
+        title="Sign out"
+        onClick={onSignOut}
+        style={{ background: 'none', border: 'none', color: 'var(--bp-on-dark)', cursor: 'pointer', display: 'flex', padding: 4 }}
+      >
+        <Icon name="logout" size={20} color="#fff" />
+      </button>
     </header>
   );
 }
@@ -216,7 +242,7 @@ function SideNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function AuthedShell() {
+function AuthedShell({ session, onSignOut }: { session: PhysicianSession; onSignOut: () => void }) {
   const [clock, setClock] = useState('');
   const [navOpen, setNavOpen] = useState(false);
   const location = useLocation();
@@ -246,15 +272,17 @@ function AuthedShell() {
       data-nav-open={navOpen}
       style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}
     >
-      <TopBar clock={clock} onToggleNav={() => setNavOpen((v) => !v)} />
+      <TopBar clock={clock} onToggleNav={() => setNavOpen((v) => !v)} session={session} onSignOut={onSignOut} />
       <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
         <SideNav onNavigate={() => setNavOpen(false)} />
         <div className="app-scrim" onClick={() => setNavOpen(false)} aria-hidden="true" />
         <main className="app-main" style={{ flex: 1, overflow: 'auto', padding: '24px 28px' }}>
           <div style={{ maxWidth: 1040, margin: '0 auto', animation: 'bpIn .25s ease' }}>
             <Routes>
-              <Route path="/" element={<Navigate to="/worklist" replace />} />
+              <Route path="/" element={<Navigate to="/home" replace />} />
+              <Route path="/home" element={<HomePage />} />
               <Route path="/worklist" element={<WorklistPage />} />
+              <Route path="/worklist/:appointmentId/review" element={<PatientReviewPage />} />
               <Route path="/worklist/:appointmentId/context" element={<PatientContextPage />} />
               <Route path="/consultation/:appointmentId" element={<ConsultationWorkspacePage />} />
               <Route path="/consultation/:appointmentId/documentation" element={<DocumentationPage />} />
@@ -264,9 +292,7 @@ function AuthedShell() {
               <Route path="/consultation/:appointmentId/close" element={<ClosePage />} />
               <Route path="/consultation/:appointmentId/withdrawn" element={<WithdrawnPage />} />
               <Route path="/previous" element={<PreviousPatientsPage />} />
-              <Route path="/providers" element={<ProvidersPage />} />
-              <Route path="/providers/:providerId" element={<ProviderDetailPage />} />
-              <Route path="*" element={<Navigate to="/worklist" replace />} />
+              <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           </div>
         </main>
@@ -275,12 +301,30 @@ function AuthedShell() {
   );
 }
 
+function Gated() {
+  // App-level physician session (who is signed in → scopes the worklist via X-Physician-Id).
+  const [session, setSession] = useState<PhysicianSession | null>(() => getPhysicianSession());
+
+  if (!session) {
+    return <PhysicianLoginPage onSignedIn={() => setSession(getPhysicianSession())} />;
+  }
+  return (
+    <AuthedShell
+      session={session}
+      onSignOut={() => {
+        clearPhysicianSession();
+        setSession(null);
+      }}
+    />
+  );
+}
+
 export function App() {
   return (
     <AppProviders>
       <RequireAuth>
         <RequireRole roles={['PHYSICIAN']}>
-          <AuthedShell />
+          <Gated />
         </RequireRole>
       </RequireAuth>
     </AppProviders>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePhysicianApi } from '../api/physicianApi';
 import type { Readiness, WorklistEntry } from '../api/types';
+import { deriveWorklistStatus, hasArrived, isCompleted } from '../api/worklistStatus';
 import { MOCK_WORKLIST_AFTER } from '../data/mockData';
 import { labels } from '../config/labels';
 import { Avatar, BpButton, Icon } from '../ui/primitives';
@@ -29,17 +30,6 @@ function clockOf(entry: WorklistEntry): string {
   return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
-/** "Waiting 8 min" style, matching the reference copy. */
-function waitingLabel(seconds: number): string {
-  const mins = Math.max(0, Math.round(seconds / 60));
-  if (mins < 1) return 'Waiting <1 min';
-  return `Waiting ${mins} min`;
-}
-
-function isCompleted(e: WorklistEntry) {
-  return e.consultationStatus === 'CLOSED';
-}
-
 export function WorklistPage() {
   const api = usePhysicianApi();
   const navigate = useNavigate();
@@ -48,7 +38,6 @@ export function WorklistPage() {
   const [entries, setEntries] = useState<WorklistEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>('all');
-  const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (afterView) {
@@ -69,15 +58,25 @@ export function WorklistPage() {
     return () => window.clearInterval(timer);
   }, [afterView]);
 
+  // "Waiting" = patient has arrived in the waiting room and the consult isn't live/closed yet.
+  const isWaiting = useCallback(
+    (e: WorklistEntry) =>
+      hasArrived(e) &&
+      !isCompleted(e) &&
+      e.consultationStatus !== 'OPEN_DOCTOR' &&
+      e.consultationStatus !== 'STARTED',
+    [],
+  );
+
   const counts = useMemo(() => {
     const completed = entries.filter(isCompleted).length;
-    const waiting = entries.filter((e) => e.readiness === 'READY' && !isCompleted(e)).length;
+    const waiting = entries.filter(isWaiting).length;
     return { all: entries.length, waiting, completed };
-  }, [entries]);
+  }, [entries, isWaiting]);
 
   const visible = useMemo(() => {
     let rows = [...entries];
-    if (tab === 'waiting') rows = rows.filter((e) => e.readiness === 'READY' && !isCompleted(e));
+    if (tab === 'waiting') rows = rows.filter(isWaiting);
     else if (tab === 'completed') rows = rows.filter(isCompleted);
     // "Sorted by time": by scheduled/entered time ascending, unknown times last.
     rows.sort((a, b) => {
@@ -87,17 +86,7 @@ export function WorklistPage() {
       return READINESS_RANK[a.readiness] - READINESS_RANK[b.readiness];
     });
     return rows;
-  }, [entries, tab]);
-
-  const admit = async (id: string) => {
-    setBusy(id);
-    try {
-      await api.admitPatient(id);
-      navigate(`/consultation/${id}`);
-    } finally {
-      setBusy(null);
-    }
-  };
+  }, [entries, tab, isWaiting]);
 
   const tabs: { key: TabKey; label: string; count: number }[] = [
     { key: 'all', label: 'All', count: counts.all },
@@ -158,10 +147,10 @@ export function WorklistPage() {
             </thead>
             <tbody>
               {visible.map((entry) => {
+                const status = deriveWorklistStatus(entry);
                 const hasRedFlag = entry.flags.includes('RED_FLAG');
-                const completed = isCompleted(entry);
-                const atRisk = entry.technicalStatus === 'IMPAIRED';
-                const canAdmit = entry.readiness === 'READY' && !completed;
+                const completed = status.key === 'COMPLETED';
+                const canAdmit = status.joinable;
                 const otherFlags = entry.flags.filter((f) => f !== 'RED_FLAG');
 
                 return (
@@ -187,7 +176,7 @@ export function WorklistPage() {
                     </td>
 
                     <td>
-                      <StatusCell entry={entry} completed={completed} atRisk={atRisk} />
+                      <StatusCell status={status} />
                     </td>
 
                     <td>
@@ -223,8 +212,7 @@ export function WorklistPage() {
                           <button
                             type="button"
                             className="wl-btn wl-btn-primary"
-                            disabled={busy === entry.appointmentId}
-                            onClick={() => void admit(entry.appointmentId)}
+                            onClick={() => navigate(`/worklist/${entry.appointmentId}/review`)}
                           >
                             Review &amp; join
                           </button>
@@ -241,7 +229,7 @@ export function WorklistPage() {
                         <button
                           type="button"
                           className="wl-btn"
-                          onClick={() => navigate(`/worklist/${entry.appointmentId}/context`)}
+                          onClick={() => navigate(`/worklist/${entry.appointmentId}/review`)}
                         >
                           View details
                         </button>
@@ -258,80 +246,19 @@ export function WorklistPage() {
   );
 }
 
-/** The Status column: a subtle pill plus a muted sub-line (e.g. "Waiting 8 min"). */
-function StatusCell({
-  entry,
-  completed,
-  atRisk,
-}: {
-  entry: WorklistEntry;
-  completed: boolean;
-  atRisk: boolean;
-}) {
-  if (completed) {
-    return (
-      <>
-        <span className="wl-chip wl-chip-green">
-          <Icon name="task_alt" size={14} />
-          Completed
-        </span>
-        <div className="wl-substatus">Docs delivered</div>
-      </>
-    );
-  }
-  if (entry.consultationStatus === 'OPEN_DOCTOR' || entry.consultationStatus === 'STARTED') {
-    return (
-      <>
-        <span className="wl-chip wl-chip-blue">
-          <Icon name="videocam" size={14} />
-          In consultation
-        </span>
-        {entry.enteredAt && (
-          <div className="wl-substatus">
-            Since{' '}
-            {new Date(entry.enteredAt).toLocaleTimeString('en-GB', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </div>
-        )}
-      </>
-    );
-  }
-  if (atRisk) {
-    return (
-      <>
-        <span className="wl-chip wl-chip-red">
-          <Icon name="wifi_off" size={14} />
-          {labels.technical[entry.technicalStatus]}
-        </span>
-        <div className="wl-substatus">Device check needed</div>
-      </>
-    );
-  }
-  if (entry.readiness === 'READY') {
-    return (
-      <>
-        <span className="wl-chip wl-chip-green">
-          <Icon name="check_circle" size={14} />
-          Ready
-        </span>
-        <div className="wl-substatus">{waitingLabel(entry.waitingSeconds)}</div>
-      </>
-    );
-  }
-  if (entry.readiness === 'IN_PROGRESS') {
-    return (
-      <span className="wl-chip wl-chip-amber">
-        <Icon name="hourglass_top" size={14} />
-        Preparing
-      </span>
-    );
-  }
+/**
+ * The Status column: a subtle pill plus an optional muted sub-line. The status is derived from the
+ * patient's real worklist data (shared with the Home page via deriveWorklistStatus), never
+ * hard-coded per screen.
+ */
+function StatusCell({ status }: { status: ReturnType<typeof deriveWorklistStatus> }) {
   return (
-    <span className="wl-chip wl-chip-neutral">
-      <Icon name="schedule" size={14} />
-      Not arrived
-    </span>
+    <>
+      <span className={`wl-chip wl-chip-${status.chip}`}>
+        <Icon name={status.icon} size={14} />
+        {status.label}
+      </span>
+      {status.detail && <div className="wl-substatus">{status.detail}</div>}
+    </>
   );
 }

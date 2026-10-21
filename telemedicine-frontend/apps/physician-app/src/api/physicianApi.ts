@@ -7,6 +7,7 @@ import type {
 import type {
   CloseConsultationRequest,
   CloseConsultationResponse,
+  PatientDetail,
   ProviderDetail,
   ProviderStatusRequest,
   ProviderSummary,
@@ -49,6 +50,22 @@ export function usePhysicianApi() {
           MOCK_WORKLIST,
           (v) => v.length === 0,
         );
+      },
+
+      /**
+       * The D-03 review & join detail for one appointment, projected from the patient service's
+       * ConsultationContextPublished event. Returns null when the backend has no detail (e.g. the
+       * context event hasn't been projected or the appointment isn't on this physician's worklist).
+       */
+      async getPatientDetail(appointmentId: string): Promise<PatientDetail | null> {
+        try {
+          const res = await client.get<PatientDetail>(
+            `/v1/physicians/me/worklist/${encodeURIComponent(appointmentId)}`,
+          );
+          return res.data ?? null;
+        } catch {
+          return null;
+        }
       },
 
       async acknowledgeRedFlag(appointmentId: string): Promise<void> {

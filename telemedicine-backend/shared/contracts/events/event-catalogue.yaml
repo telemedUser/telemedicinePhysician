@@ -32,6 +32,9 @@ events:
   - type: StatusChanged
     version: "1.0"
     producer: waiting-room-service
+  - type: ConsultationContextPublished
+    version: "1.0"
+    producer: patient-booking-service
   - type: VideoSessionCreated
     version: "1.0"
     producer: video-service

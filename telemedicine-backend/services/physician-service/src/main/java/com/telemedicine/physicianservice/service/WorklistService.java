@@ -88,6 +88,7 @@ public class WorklistService {
                 item.getPatientRef(),
                 item.getMode(),
                 item.getEnteredAt(),
+                item.getScheduledAt(),
                 waitingSeconds,
                 item.getReadiness(),
                 item.getConsultationStatus(),

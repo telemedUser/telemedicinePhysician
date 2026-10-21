@@ -17,6 +17,8 @@ export interface WorklistEntry {
   patientRef?: string;
   mode?: ConsultationMode;
   enteredAt?: string;
+  /** The slot time the patient booked (from the patient service), shown as the consultation Time. */
+  scheduledAt?: string;
   waitingSeconds: number;
   readiness: Readiness;
   consultationStatus: ConsultationStatus;
@@ -24,6 +26,83 @@ export interface WorklistEntry {
   telemetryAvailable: boolean;
   flags: WorklistFlag[];
   redFlagAcknowledged: boolean;
+}
+
+/** One quick-check / triage question as carried in the clinical-context document. */
+export interface QuickCheckItem {
+  question: string;
+  answer: string;
+  concerning?: boolean;
+}
+
+/** One medical-history line. */
+export interface MedicalHistoryItem {
+  label: string;
+  detail?: string;
+}
+
+/** One previous encounter. */
+export interface PreviousEncounterItem {
+  date?: string;
+  diagnosis?: string;
+  physician?: string;
+  modality?: string;
+}
+
+/** One attachment reference. */
+export interface AttachmentItem {
+  filename?: string;
+  sizeLabel?: string;
+  capturedAt?: string;
+}
+
+/**
+ * The variable-length clinical context carried in the event's clinicalContextJson and parsed by the
+ * physician service. All fields are optional — the physician view renders only what arrived.
+ */
+export interface ClinicalContext {
+  reasonText?: string;
+  symptoms?: string[];
+  quickCheck?: QuickCheckItem[];
+  medicalHistory?: MedicalHistoryItem[];
+  previousEncounters?: PreviousEncounterItem[];
+  attachments?: AttachmentItem[];
+  sourced?: string;
+}
+
+/**
+ * GET /api/v1/physicians/me/worklist/{appointmentId} — the D-03 review & join detail. Every field
+ * is projected from the patient service's ConsultationContextPublished event plus the live worklist
+ * row; nothing here is hard-coded on the physician side.
+ */
+export interface PatientDetail {
+  appointmentId: string;
+  patientDisplay?: string;
+  ageYears: number;
+  sexCode?: string | null;
+  city?: string | null;
+  insuranceScheme?: string | null;
+  nationalIdMasked?: string | null;
+  modality?: string | null;
+  visitType?: string | null;
+  scheduledAt?: string | null;
+  severityScore: number;
+  symptomDurationCode?: string | null;
+  symptomCount: number;
+  attachmentCount: number;
+  redFlag: boolean;
+  consultationFeeMinor: number;
+  voucherMinor: number;
+  amountPaidMinor: number;
+  currency: string;
+  paymentStatus?: string | null;
+  clinicalContext?: ClinicalContext | null;
+  readiness: Readiness;
+  consultationStatus: ConsultationStatus;
+  technicalStatus: TechnicalStatus;
+  enteredAt?: string | null;
+  redFlagAcknowledged: boolean;
+  contextAvailable: boolean;
 }
 
 /** POST /api/v1/physicians/me/consultations/{id}/close */

@@ -710,6 +710,14 @@ body {
   letter-spacing: 0.06em;
 }
 
+/* Home dashboard (D-01): two columns (clinic + inbox rail) collapsing to one on narrow viewports.
+   The !important overrides the inline grid-template-columns on the HomePage container. */
+@media (max-width: 900px) {
+  .home-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Checklist item (green check + bold + sub-line). */
 .pg-check {
   display: flex;

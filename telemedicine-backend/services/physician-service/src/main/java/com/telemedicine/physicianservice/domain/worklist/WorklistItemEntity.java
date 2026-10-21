@@ -33,6 +33,10 @@ public class WorklistItemEntity {
     @Column(name = "entered_at")
     private Instant enteredAt;
 
+    /** The slot the patient booked (AppointmentCreated.scheduledAt), shown as the clinic "Time". */
+    @Column(name = "scheduled_at")
+    private Instant scheduledAt;
+
     @Column(nullable = false)
     private String readiness;
 
@@ -108,6 +112,14 @@ public class WorklistItemEntity {
 
     public void setEnteredAt(Instant enteredAt) {
         this.enteredAt = enteredAt;
+    }
+
+    public Instant getScheduledAt() {
+        return scheduledAt;
+    }
+
+    public void setScheduledAt(Instant scheduledAt) {
+        this.scheduledAt = scheduledAt;
     }
 
     public String getReadiness() {

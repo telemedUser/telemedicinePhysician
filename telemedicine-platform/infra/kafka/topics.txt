@@ -9,6 +9,7 @@ IdentityValidationFailed
 DeviceTestCompleted
 PatientEnteredWaitingRoom
 StatusChanged
+ConsultationContextPublished
 VideoSessionCreated
 VideoSessionStarted
 VideoSessionEnded
@@ -37,6 +38,7 @@ IdentityValidationFailed.DLQ
 DeviceTestCompleted.DLQ
 PatientEnteredWaitingRoom.DLQ
 StatusChanged.DLQ
+ConsultationContextPublished.DLQ
 VideoSessionCreated.DLQ
 VideoSessionStarted.DLQ
 VideoSessionEnded.DLQ
@@ -65,6 +67,7 @@ IdentityValidationFailed.RETRY
 DeviceTestCompleted.RETRY
 PatientEnteredWaitingRoom.RETRY
 StatusChanged.RETRY
+ConsultationContextPublished.RETRY
 VideoSessionCreated.RETRY
 VideoSessionStarted.RETRY
 VideoSessionEnded.RETRY

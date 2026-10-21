@@ -10,6 +10,7 @@ import java.util.List;
  * @param patientRef pseudonymous patient reference
  * @param mode consultation mode (video/audio/chat)
  * @param enteredAt when the patient entered the waiting room
+ * @param scheduledAt the slot time the patient booked (the consultation "Time")
  * @param waitingSeconds elapsed waiting time
  * @param readiness NOT_READY | IN_PROGRESS | READY
  * @param consultationStatus CHECKED_IN | OPEN_DOCTOR | STARTED | CLOSED
@@ -23,6 +24,7 @@ public record WorklistEntryResponse(
         String patientRef,
         String mode,
         Instant enteredAt,
+        Instant scheduledAt,
         long waitingSeconds,
         String readiness,
         String consultationStatus,
