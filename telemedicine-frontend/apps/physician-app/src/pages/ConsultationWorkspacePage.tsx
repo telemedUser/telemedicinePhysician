@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { labels } from '../config/labels';
 import { Avatar, BpButton, BpInput, Card, Icon, Overline, Pill } from '../ui/primitives';
 import { CONSULTATION_FLOW_POINTS, MOCK_CONTEXTS, MOCK_TRANSCRIPT, MOCK_VITALS } from '../data/mockData';
+import { VideoCall } from '../video/VideoCall';
+import { resolveVideoConfig } from '../video/videoConfig';
 
 type VitalsState = 'idle' | 'running' | 'done' | 'failed';
 type AiState = 'off' | 'physician' | 'patient_pending' | 'patient_declined' | 'on';
@@ -77,6 +79,10 @@ export function ConsultationWorkspacePage() {
   const ss = String(elapsed % 60).padStart(2, '0');
   const patientName = ctx?.name ?? appointmentId;
 
+  // Live video: the physician joins the room keyed by the appointment reference as the "doctor"
+  // peer; the patient app joins the same room. ICE (STUN/TURN) makes it work across networks.
+  const video = resolveVideoConfig();
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Header strip */}
@@ -106,26 +112,16 @@ export function ConsultationWorkspacePage() {
       </Card>
 
       <div className="grid-2col" style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 16, alignItems: 'start' }}>
-        {/* LEFT: video placeholder + chat/transcript */}
+        {/* LEFT: live video call + chat/transcript */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Card
-            style={{
-              minHeight: 180,
-              background: 'linear-gradient(135deg, var(--bp-navy), var(--bp-navy-2))',
-              color: '#fff',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              border: 'none',
-            }}
-          >
-            <Icon name={isAudio ? 'call' : 'videocam'} size={34} color="#fff" />
-            <strong>{isAudio ? 'Audio consultation' : 'Video handled by the HIS'}</strong>
-            <span style={{ fontSize: 12, color: 'var(--bp-on-dark-muted)', textAlign: 'center', maxWidth: 360 }}>
-              {isAudio ? 'Lakshmi’s visit is audio-only: no video tile.' : labels.workspace.videoNotice}
-            </span>
+          <Card padded={false} style={{ padding: 12 }}>
+            <VideoCall
+              roomId={appointmentId}
+              role="doctor"
+              wsUrl={video.wsUrl}
+              iceServers={video.iceServers}
+              onEnded={() => navigate(`/consultation/${appointmentId}/review`)}
+            />
           </Card>
 
           <Card padded={false} style={{ display: 'flex', flexDirection: 'column', height: 360 }}>

@@ -133,9 +133,9 @@ export function PatientReviewPage() {
   const mode = (detail.modality ?? 'VIDEO').toLowerCase();
   const name = detail.patientDisplay ?? appointmentId;
 
-  // Join is only possible once the patient has arrived in the waiting room. Ready = enabled;
-  // in waiting room (checks in progress) = shown but disabled; not arrived = no button.
-  const canJoin = status.joinable;
+  // The doctor can join as soon as the patient has arrived in the waiting room — whether their
+  // device checks report READY or are still IN_PROGRESS. Only "not arrived" / "completed" block it.
+  const canJoin = status.arrived && status.key !== 'COMPLETED';
   const showJoin = status.arrived && status.key !== 'COMPLETED';
 
   const metaBits: string[] = [];

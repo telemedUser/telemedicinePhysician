@@ -759,3 +759,29 @@ body {
   font-size: 12px;
   color: var(--bp-muted);
 }
+
+/* Video call control buttons (physician consultation workspace). */
+.vc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--bp-border);
+  background: #fff;
+  color: var(--bp-navy);
+  cursor: pointer;
+  font: 600 14px 'Figtree', system-ui, sans-serif;
+}
+.vc-btn[aria-pressed='true'] {
+  background: var(--bp-danger-bg);
+  border-color: #f3c7c7;
+  color: var(--bp-danger);
+}
+.vc-btn-hangup,
+.vc-btn-hangup[aria-pressed='true'] {
+  background: var(--bp-danger);
+  border-color: var(--bp-danger);
+  color: #fff;
+}

@@ -91,6 +91,17 @@ export function usePhysicianApi() {
         } catch {
           /* demo mode */
         }
+        // Open the room on the patient side so the patient's waiting room (P-17) releases them into
+        // the video call (the patient polls /consultations/{ref}/status for doctorReady). Reached
+        // via the physician app's /booking-api proxy → patient-booking-service :8120 /api.
+        try {
+          await fetch(`/booking-api/consultations/${encodeURIComponent(appointmentId)}/doctor-open`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+        } catch {
+          /* best-effort: the physician can still join the room; the patient may join via their own flow */
+        }
       },
 
       async getConsultation(appointmentId: string): Promise<PhysicianConsultationResponse | null> {

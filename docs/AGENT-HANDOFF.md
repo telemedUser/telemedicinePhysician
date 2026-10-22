@@ -2,7 +2,7 @@
 
 > Purpose: give a fresh agent (new account/session) the full working context so work can
 > continue from the current step without re-discovery. Read this top-to-bottom first.
-> Last updated: after building the D-03 patient review/join page end-to-end over Kafka.
+> Last updated: after wiring real WebRTC video conferencing end-to-end (physician doctor peer + STUN/TURN).
 >
 > **Patient module** is a separate repo with its own handoff:
 > `c:\Users\anasin\Documents\telemedicine_docs\telemedicinePatient_integration\docs\AGENT-HANDOFF.md`
@@ -209,6 +209,50 @@ reason/symptoms/age/payment/readiness; fresh appt reaches READY + enteredAt; cro
 (Gotcha seen: reusing an appointment id across restarts can get the arrival event deduped by
 `@IdempotentConsumer`, leaving enteredAt null — use a fresh ref when smoke-testing arrival. Keep
 `nationalIdMasked` ASCII — a `•` bullet mojibakes in this stack.)
+
+## 6c. Video conferencing — WIRED END-TO-END this session (real WebRTC)
+
+The physician can now pull a ready patient and run a real two-way audio/video call. It uses the
+platform's REAL WebRTC stack (not the mock video-service :8103). Media is peer-to-peer; signaling is
+a WebSocket relay.
+
+**Signaling server:** `video-consultation-service` (:8130) lives in the **patient** repo only
+(`telemedicinePatient_integration/.../services/video-consultation-service`). `SignalHandler` relays
+`join`/`offer`/`answer`/`ice`/`chat`/`peer-joined`/`peer-here` between the two peers in a room keyed
+by the appointment ref; WS path `/ws`, any origin allowed. Run it:
+`cwd telemedicinePatient_integration/telemedicine-backend`,
+`$env:DB_HOST/PORT=localhost/5432; $env:DB_NAME=telemedicine; $env:DB_USER=telemedicine; $env:DB_PASSWORD=change-me-locally; .\gradlew.bat :video-consultation-service:bootRun --no-daemon --console=plain`
+(DB `telemedicine`, migration V200; health actuator path is NOT exposed — check the boot log / the
+WS handshake, not /actuator/health). BOTH apps must point their `VITE_VIDEO_WS_URL` at this one host.
+
+**Physician client (new, self-contained in physician-app `src/video/`):** `videoConfig.ts`
+(`resolveVideoConfig` → wsUrl + `resolveIceServers`), `useWebRtcCall.ts` (getUserMedia +
+RTCPeerConnection + the WS protocol; doctor = offerer), `VideoCall.tsx` (uses the app `Icon`, not
+lucide-react, so NO new dependency / workspace install). Mounted in
+`pages/ConsultationWorkspacePage.tsx` as `<VideoCall role="doctor" roomId={appointmentId} .../>`,
+replacing the old "Video handled by the HIS" placeholder. `.vc-btn` styles appended to theme.css.
+
+**Join flow:** D-03 "Join consultation" → `physicianApi.admitPatient` now ALSO POSTs
+`/booking-api/consultations/{ref}/doctor-open` (→ patient-booking-service :8120) so the patient's
+P-17 waiting room releases them into P-18; then navigates to `/consultation/{id}` where the doctor
+peer joins room = appointmentId. Patient joins the same room at P-18 `VideoConsultationScreen`.
+
+**No-LAN / on-the-fly (NAT traversal):** both apps now pass `iceServers` (previously the patient
+passed none). Default = public Google STUN. A TURN relay is configurable via env
+(`VITE_TURN_URL` / `VITE_TURN_USERNAME` / `VITE_TURN_CREDENTIAL`) in both apps' `.env.development`.
+STUN covers most NATs; **TURN (deploy coturn) is required for symmetric-NAT / restrictive networks**
+— no TURN server ships in this repo, so provision one for guaranteed cross-network calls.
+
+**Join-order fix:** the original patient hook only offered on `peer-joined` (doctor-joins-second).
+Added a symmetric `peer-here` handshake in BOTH hooks (physician `src/video/useWebRtcCall.ts` and
+patient `packages/video-conference/src/useWebRtcCall.ts`) so the call connects regardless of who
+joins first.
+
+**Verified:** signaling service up on :8130 (V200 applied); WS handshake on `/ws` succeeds; two-peer
+relay proven (doctor receives `peer-joined` when patient joins, and a patient `offer` is relayed to
+the doctor verbatim); all physician video modules + ConsultationWorkspacePage transform 200; patient
+app HMR-reloaded the updated package cleanly. (Could not automate an actual camera handshake in a
+headless shell — that needs two real browsers; the signaling + ICE wiring is confirmed.)
 
 ### NEXT STEP — more physician screens (D-NN)
 The user will share further physician prototype screenshots one at a time. Keep Section 2 decisions

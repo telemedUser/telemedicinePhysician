@@ -22,10 +22,12 @@ function initials(name?: string) {
     .join('');
 }
 
-/** Entered-at as a HH:MM clock, falling back to a dash when the patient hasn't checked in. */
+/** The patient's actual booked consultation time (scheduledAt) as HH:MM; falls back to waiting-room
+ *  arrival only if the schedule is unknown, else a dash. */
 function clockOf(entry: WorklistEntry): string {
-  if (!entry.enteredAt) return '—';
-  const d = new Date(entry.enteredAt);
+  const iso = entry.scheduledAt ?? entry.enteredAt;
+  if (!iso) return '—';
+  const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
@@ -78,10 +80,12 @@ export function WorklistPage() {
     let rows = [...entries];
     if (tab === 'waiting') rows = rows.filter(isWaiting);
     else if (tab === 'completed') rows = rows.filter(isCompleted);
-    // "Sorted by time": by scheduled/entered time ascending, unknown times last.
+    // "Sorted by time": by the booked consultation time (scheduledAt) ascending, unknown last.
     rows.sort((a, b) => {
-      const ta = a.enteredAt ? Date.parse(a.enteredAt) : Number.POSITIVE_INFINITY;
-      const tb = b.enteredAt ? Date.parse(b.enteredAt) : Number.POSITIVE_INFINITY;
+      const sa = a.scheduledAt ?? a.enteredAt;
+      const sb = b.scheduledAt ?? b.enteredAt;
+      const ta = sa ? Date.parse(sa) : Number.POSITIVE_INFINITY;
+      const tb = sb ? Date.parse(sb) : Number.POSITIVE_INFINITY;
       if (ta !== tb) return ta - tb;
       return READINESS_RANK[a.readiness] - READINESS_RANK[b.readiness];
     });
@@ -150,7 +154,9 @@ export function WorklistPage() {
                 const status = deriveWorklistStatus(entry);
                 const hasRedFlag = entry.flags.includes('RED_FLAG');
                 const completed = status.key === 'COMPLETED';
-                const canAdmit = status.joinable;
+                // Offer "Review & join" as soon as the patient is in the waiting room (arrived),
+                // not only when device checks report READY.
+                const canAdmit = status.arrived && !completed;
                 const otherFlags = entry.flags.filter((f) => f !== 'RED_FLAG');
 
                 return (
