@@ -2,7 +2,7 @@
 
 > Purpose: give a fresh agent (new account/session) the full working context so work can
 > continue from the current step without re-discovery. Read this top-to-bottom first.
-> Last updated: after wiring real WebRTC video conferencing end-to-end (physician doctor peer + STUN/TURN).
+> Last updated: after deploying the full stack to AWS (single-AZ) + 4 post-deploy UI fixes.
 >
 > **Patient module** is a separate repo with its own handoff:
 > `c:\Users\anasin\Documents\telemedicine_docs\telemedicinePatient_integration\docs\AGENT-HANDOFF.md`
@@ -288,3 +288,89 @@ curl -X POST http://localhost:8114/api/auth/physician-sign-in -H "Content-Type: 
 curl -H "X-Market: IN" -H "X-Physician-Id: doc-khanna" http://localhost:8114/api/v1/physicians/me/worklist   # 7 items
 open http://localhost:3015                                        # login page → sign in → worklist
 ```
+
+---
+
+## 9. AWS deployment (single-AZ "get it up") — DONE
+
+Full stack is deployed and running on AWS, reachable over HTTPS. The authoritative step-by-step
+is `c:\Users\anasin\Documents\telemedicine_docs\AWS-DEPLOYMENT-GUIDE.md`; this section records the
+ACTUAL provisioned resources and the deltas from the guide.
+
+**Account / region:** `380484394442` / `ap-south-1`. ECR registry
+`380484394442.dkr.ecr.ap-south-1.amazonaws.com`. VPC `vpc-097003954bff62a2f`, subnet
+`subnet-01de4778f5e3715f8`, EC2 key pair `telemedicine-deploy-key`, instance profile `tele-ec2-profile`.
+
+**Instances (all single-AZ):**
+- `tele-infra` `i-0a850deb04ad1ac6b` (t3.large, private IP `172.31.42.42`) — Docker: Kafka (KRaft,
+  `apache/kafka:3.7.0`), Redis, Consul via `/home/ec2-user/infra/docker-compose.yml`. Kafka
+  `advertised.listeners=PLAINTEXT://172.31.42.42:9092`. Got an Elastic IP `35.154.17.75`
+  (`eipalloc-06c1666c14979f06e`) for outbound image pulls (subnet routes to IGW; no NAT).
+- `tele-app` `i-00969f26a8c315c99` (t3.xlarge, `172.31.40.16`, public `15.206.70.72`) — Docker:
+  the 6 services + 2 SPA nginx images + Caddy (auto-TLS) via `/home/ec2-user/app/docker-compose.yml`
+  + `/home/ec2-user/app/Caddyfile`.
+- `tele-turn` `i-023a62f8240910d8d` (t3.small, EIP `13.235.249.249`) — Docker `coturn/coturn`
+  (`--realm=telemedicine --user=telemedicine:ChangeMe_TurnSecret_123`, ports 3478 + relay 49152-65535).
+- RDS `tele-db` (`tele-db.c7q4waysk05b.ap-south-1.rds.amazonaws.com:5432`, user `telemedicine`,
+  pwd `ChangeMe_StrongPwd_123`), single-AZ; databases `physician`, `patient_booking`, `telemedicine`.
+
+**Security groups:** infra `sg-06910c44df5a1fe4d`, app `sg-0fd6c63fbff6181f4`, turn
+`sg-0a3a271eb3b4a0f48`, db `sg-07c3d08624207f991`, VPC-endpoint `sg-0005a5b630e6f892c`.
+
+**Reaching the private infra box:** `tele-infra` had no public IP / no NAT / no SSM. Fixed by
+creating 3 **SSM interface VPC endpoints** (`ssm` `vpce-05907e52b47e77e87`, `ssmmessages`
+`vpce-0d727e5d8d93135a6`, `ec2messages` `vpce-0bf0d66e9ac8b8066`) + SG `sg-0005a5b630e6f892c`
+(443 from `172.31.0.0/16`). All 3 instances are now managed via **SSM Run Command** — the whole
+deploy was driven through `aws ssm send-command` (AWS-RunShellScript) since there is no SSH from the
+agent host. SSM params were passed as JSON files (`file://...`) to avoid quoting hell.
+
+**HTTPS / routing (Caddy on tele-app):** two hostnames via **nip.io** (demo-grade, no registrar):
+- Physician: `https://phys.15-206-70-72.nip.io` → `/api/*`→physician-service:8114,
+  `/booking-api/*`→patient-booking:8120 (path-rewritten to `/api`), `/ws*`→video:8130, `/`→physician SPA.
+- Patient: `https://patient.15-206-70-72.nip.io` → `/api/*`→patient-booking:8120, `/ws*`→video:8130, `/`→patient SPA.
+- Caddy gets Let's Encrypt certs automatically (needs DNS + ports 80/443, both open).
+
+**CORS fix (critical, non-obvious):** the SPAs send a custom `x-correlation-id` header → browser
+preflights → Spring dev chain answered OPTIONS with 403 ("Invalid CORS request"). Fixed entirely in
+**Caddy**: it answers OPTIONS preflight (204 + `Access-Control-*`) AND strips the upstream `Origin`
+header (`header_up -Origin`) before proxying so Spring treats it as same-origin, while Caddy adds
+`Access-Control-Allow-Origin` on the response. No backend rebuild needed.
+
+**Build gotchas encountered:** (1) no `.dockerignore` → Docker build-context "context canceled";
+added `.dockerignore` to both backends. (2) `bitnami/kafka:3.7` tag no longer exists → switched to
+`apache/kafka:3.7.0` (different env var names: `KAFKA_*` not `KAFKA_CFG_*`). (3) `tele-app` had the
+standalone `docker-compose` (v1) from its userdata, not the v2 plugin → installed the compose v2
+plugin so `docker compose` works. (4) Images: `physician-service/physician-bff/gateway/physician-app/
+patient-app` were pre-built; the 3 patient-side (`patient-booking-service`, `video-consultation-service`,
+`patient-bff`) were MISSING in ECR and had to be built+pushed.
+
+**All images tag `0.1.0`.** SPAs are built with prod `VITE_*` (nip.io `wss://` + TURN creds) baked
+in at build time — rebuild + re-push + `docker compose up -d --force-recreate <spa>` to ship FE changes.
+
+**Dev/demo caveats (must-fix before real users):** dev auth bypass is ON; secrets are plaintext in
+the compose on the instances; nip.io + plain `turn:` (not `turns:`); `tele-infra` has a public IP for
+pulls. See the guide §12.
+
+---
+
+## 10. Post-deploy UI fixes (this session)
+
+Four fixes after first live test (all shipped to AWS via rebuild+push+recreate of the SPA containers):
+1. **Device-check icons showed literal `\uD83D...`** (patient `DeviceCheckScreen.tsx`): emoji were
+   JSX attribute strings `icon="\uD83D\uDCF9"` (backslash escapes NOT interpreted in JSX attrs) →
+   changed to JS expressions `icon={"\uD83D\uDCF9"}`.
+2. **"Manage" dropdown hidden on My Care** (patient `HomeScreen.tsx`): the appointment card had
+   `overflow: "hidden"` clipping the absolutely-positioned menu → changed that card to `overflow: "visible"`.
+3. **Physician worklist showed arrival time, not booked time** (`WorklistPage.tsx` `clockOf` + sort):
+   now uses `entry.scheduledAt ?? entry.enteredAt` (the real consultation slot time). D-03 already used scheduledAt.
+4. **Doctor Join not enabled once patient waiting** (`WorklistPage.tsx` `canAdmit`, `PatientReviewPage.tsx`
+   `canJoin`): changed gate from strict `status.joinable` (READY) to `status.arrived && !completed` — the
+   doctor can join as soon as the patient is in the waiting room.
+
+Also for on-demand video testing: patient `WaitingRoomScreen.tsx` `doctorReady` defaults to `true`
+(Join always available, no doctor-opens-first handshake). **Revert that one line for real
+admit-first behavior.**
+
+**Live test logins:** physician `arjun.khanna@connectedcare.in`/`doctor123`; patient
+`priya@example.in`/`correct-horse` (or blank/blank in dev). Seed a ready patient via the patient
+API (booking → otp/send → otp/verify code `739214` → ready) against `https://patient.15-206-70-72.nip.io/api`.
