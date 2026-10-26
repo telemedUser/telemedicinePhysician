@@ -785,3 +785,440 @@ body {
   border-color: var(--bp-danger);
   color: #fff;
 }
+
+/* ============================================================
+   D-08 Review / Care plan (prototype styling: warm cream AI-note
+   card, step pills, two-column note rows, white care-plan cards).
+   ============================================================ */
+
+/* Step pills: Review / Send / Close. */
+.cp-steps { display: flex; align-items: center; gap: 0; }
+.cp-step {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px 6px 8px; border-radius: var(--bp-pill);
+  font: 600 14px Figtree, system-ui, sans-serif; color: var(--bp-muted); background: transparent;
+}
+.cp-step.is-active { background: var(--bp-navy); color: #fff; }
+.cp-step.is-done { color: var(--bp-text-2); }
+/* A completed step: soft green pill with a white check badge (D-09 "Review" done). */
+.cp-step.is-complete { background: var(--bp-ok-bg); color: var(--bp-ok); }
+.cp-step-num {
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; background: #e3e8ee; color: var(--bp-muted); flex: none;
+}
+.cp-step.is-active .cp-step-num { background: var(--bp-blue); color: #fff; }
+.cp-step.is-complete .cp-step-num { background: var(--bp-ok); color: #fff; }
+.cp-step-sep { width: 20px; height: 1px; background: var(--bp-border); margin: 0 6px; }
+
+.cp-title { margin: 0; font-size: 26px; font-weight: 700; color: var(--bp-navy); letter-spacing: -0.01em; }
+
+/* Warm "AI draft" clinical-note card. */
+.cp-note-card {
+  background: var(--bp-warn-bg);
+  border: 1px solid #f0e2c9;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.cp-card {
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-border-2);
+  border-radius: 16px;
+  box-shadow: var(--bp-shadow);
+  overflow: hidden;
+}
+.cp-head {
+  display: flex; align-items: center; gap: 10px; padding: 16px 18px;
+}
+.cp-head-icon {
+  width: 34px; height: 34px; border-radius: 9px; flex: none;
+  display: grid; place-items: center; background: var(--bp-blue-tint); color: var(--bp-blue);
+}
+.cp-head-title { font-size: 16px; font-weight: 700; color: var(--bp-navy); }
+.cp-ai-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font: 600 12px Figtree, sans-serif; color: var(--bp-warn);
+  background: #f7e4c4; padding: 3px 9px; border-radius: var(--bp-pill);
+}
+.cp-link {
+  background: none; border: none; cursor: pointer;
+  font: 600 13px Figtree, sans-serif; color: var(--bp-muted);
+}
+.cp-link:hover { color: var(--bp-text); }
+
+/* Two-column note row: small-caps label + value + inline pencil. */
+.cp-row {
+  display: grid; grid-template-columns: 116px 1fr 24px; gap: 16px; align-items: start;
+  padding: 14px 18px;
+}
+.cp-row + .cp-row { border-top: 1px solid rgba(240, 226, 201, 0.7); }
+.cp-card .cp-row + .cp-row { border-top: 1px solid var(--bp-border-2); }
+.cp-row-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--bp-muted); padding-top: 3px;
+}
+.cp-row-value { font-size: 15px; line-height: 1.55; color: var(--bp-text); }
+.cp-row-value.is-empty { color: var(--bp-muted-2); }
+.cp-pencil {
+  background: none; border: none; cursor: pointer; color: var(--bp-muted-2);
+  display: flex; padding: 2px; justify-self: end;
+}
+.cp-pencil:hover { color: var(--bp-blue); }
+
+/* Inline editing field gets the blue focus frame like the prototype. */
+.cp-edit-field {
+  width: 100%; border: 1.5px solid var(--bp-blue); border-radius: 10px;
+  padding: 10px 12px; font: 15px/1.55 Figtree, system-ui, sans-serif; color: var(--bp-text);
+  outline: none; box-shadow: 0 0 0 3px rgba(0, 121, 200, 0.12); resize: vertical; background: #fff;
+}
+
+/* Blue "Approve" / primary pill button. */
+.cp-approve {
+  display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 16px;
+  border: none; border-radius: var(--bp-pill); cursor: pointer;
+  font: 600 13px Figtree, sans-serif; background: var(--bp-blue); color: #fff;
+}
+.cp-approve.is-approved { background: var(--bp-ok); }
+
+/* Care-plan toggle switch. */
+.cp-switch { width: 42px; height: 24px; border-radius: var(--bp-pill); background: #cfd6dd; position: relative; border: none; cursor: pointer; flex: none; transition: background .15s; }
+.cp-switch.on { background: var(--bp-blue); }
+.cp-switch-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .15s; }
+.cp-switch.on .cp-switch-knob { left: 20px; }
+
+/* "Add medication / Add diagnostic test" dashed action row. */
+.cp-add {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  border: 1.5px dashed var(--bp-border); border-radius: 12px; background: none; cursor: pointer;
+  padding: 12px; font: 600 14px Figtree, sans-serif; color: var(--bp-blue);
+}
+.cp-add:hover { background: var(--bp-blue-tint-2); border-color: var(--bp-blue); }
+
+/* ---- D-08 care plan: single card with rows, search field + portal menu ---- */
+
+/* The one "Care plan" card that holds Diagnosis / Prescription / Follow-up / Medical leave rows. */
+.cp-plan-card {
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-border-2);
+  border-radius: 16px;
+  box-shadow: var(--bp-shadow);
+  /* NOTE: no overflow:hidden — the search menu is portalled anyway, but keep radius clean. */
+}
+.cp-plan-title { display: flex; align-items: center; gap: 10px; padding: 16px 18px; }
+.cp-plan-title .cp-head-icon { background: var(--bp-blue-tint); }
+.cp-plan-title-text { font-size: 17px; font-weight: 700; color: var(--bp-navy); }
+.cp-written-by {
+  display: inline-flex; align-items: center; gap: 5px;
+  font: 600 12px Figtree, sans-serif; color: var(--bp-muted);
+  background: #eef1f4; padding: 3px 10px; border-radius: var(--bp-pill);
+}
+
+/* A care-plan row (Diagnosis / Prescription / Follow-up / Medical leave). */
+.cp-plan-row { border-top: 1px solid var(--bp-border-2); padding: 16px 18px; }
+.cp-plan-row-head { display: flex; align-items: center; gap: 10px; }
+.cp-plan-row-title { flex: 1; font-size: 15px; font-weight: 700; color: var(--bp-navy); }
+
+/* Blue "+ Add" pill (diagnosis). */
+.cp-add-pill {
+  display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px;
+  border: none; border-radius: var(--bp-pill); cursor: pointer;
+  font: 600 13px Figtree, sans-serif; background: var(--bp-blue-tint); color: var(--bp-blue-dark);
+}
+.cp-add-pill:hover { background: #ddeefb; }
+
+/* Dashed split "Add medication | Add diagnostic test". */
+.cp-add-split {
+  display: flex; border: 1.5px dashed var(--bp-border); border-radius: 12px; overflow: hidden; margin-top: 12px;
+}
+.cp-add-split button {
+  flex: 1; background: none; border: none; cursor: pointer; padding: 13px;
+  font: 600 14px Figtree, sans-serif; color: var(--bp-blue);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.cp-add-split button:first-child { border-right: 1.5px dashed var(--bp-border); }
+.cp-add-split button:hover { background: var(--bp-blue-tint-2); }
+
+/* Framed "Medicine N" entry box with the search field inside. */
+.cp-medbox { background: var(--bp-surface-2); border: 1px solid var(--bp-border-2); border-radius: 12px; padding: 14px; margin-top: 12px; }
+.cp-medbox-title { font-size: 13px; font-weight: 700; color: var(--bp-navy); margin-bottom: 10px; }
+
+/* Search input used by the type-ahead. */
+.cp-search {
+  display: flex; align-items: center; gap: 8px;
+  border: 1.5px solid var(--bp-border); border-radius: 10px; padding: 0 12px; height: 46px; background: #fff;
+}
+.cp-search:focus-within { border-color: var(--bp-blue); box-shadow: 0 0 0 3px rgba(0,121,200,0.12); }
+
+/* Portalled options menu (fixed-positioned, above everything). */
+.cp-menu {
+  background: #fff; border: 1px solid var(--bp-border); border-radius: 12px;
+  box-shadow: var(--bp-shadow-lg); max-height: 300px; overflow-y: auto;
+}
+.cp-menu-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 11px 14px; border: none; background: none; cursor: pointer; font: inherit;
+}
+.cp-menu-item + .cp-menu-item { border-top: 1px solid var(--bp-border-2); }
+.cp-menu-item:hover { background: var(--bp-blue-tint-2); }
+.cp-menu-badge {
+  flex: none; font: 600 12px ui-monospace, Menlo, monospace; color: var(--bp-blue-dark);
+  background: var(--bp-blue-tint); padding: 2px 8px; border-radius: 6px;
+}
+
+/* ---- D-08 care plan: Follow-up & Medical-leave rows (summary line + inset editor) ---- */
+
+/* Collapsed summary shown under the row title once the toggle is on. */
+.cp-rowsum { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; }
+.cp-rowsum-body { flex: 1; min-width: 0; }
+.cp-rowsum-title { font-size: 15px; font-weight: 600; color: var(--bp-text); }
+.cp-rowsum-sub { margin-top: 2px; font-size: 13px; color: var(--bp-muted); }
+/* Soft blue-tinted pencil button (matches the prototype's rounded edit affordance). */
+.cp-pencil-btn {
+  flex: none; display: grid; place-items: center; width: 34px; height: 34px;
+  border: none; border-radius: 10px; cursor: pointer;
+  background: var(--bp-blue-tint); color: var(--bp-blue);
+}
+.cp-pencil-btn:hover { background: #ddeefb; }
+
+/* Light-gray rounded inset editor panel (Follow-up / Medical leave). */
+.cp-inset {
+  margin-top: 12px; background: var(--bp-surface-2); border: 1px solid var(--bp-border-2);
+  border-radius: 14px; padding: 18px;
+}
+.cp-inset-title { font-size: 15px; font-weight: 700; color: var(--bp-navy); }
+.cp-inset-label {
+  display: block; margin: 14px 0 8px; font-size: 13px; font-weight: 600; color: var(--bp-muted);
+}
+.cp-inset-label:first-of-type { margin-top: 12px; }
+
+/* Segmented preset selector (3 days / 5 days / 1 week ...). */
+.cp-presets {
+  display: flex; gap: 6px; background: #e9edf1; border-radius: 14px; padding: 6px;
+}
+.cp-preset {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  border: none; background: none; cursor: pointer; border-radius: 10px; padding: 10px 6px;
+  color: var(--bp-muted); font-family: Figtree, system-ui, sans-serif; transition: background .12s, box-shadow .12s;
+}
+.cp-preset-num { font-size: 18px; font-weight: 700; color: var(--bp-text-2); line-height: 1; }
+.cp-preset-unit { font-size: 12px; font-weight: 500; }
+.cp-preset.is-active { background: #fff; box-shadow: var(--bp-shadow); }
+.cp-preset.is-active .cp-preset-num { color: var(--bp-navy); }
+.cp-preset:hover:not(.is-active) { background: rgba(255,255,255,0.5); }
+
+/* Pill "Done" button used inside the inset editors. */
+.cp-done {
+  margin-top: 16px; display: inline-flex; align-items: center; justify-content: center;
+  height: 40px; padding: 0 22px; border: none; border-radius: var(--bp-pill); cursor: pointer;
+  font: 700 14px Figtree, sans-serif; background: var(--bp-blue); color: #fff;
+}
+.cp-done:hover { background: var(--bp-blue-dark); }
+
+/* Full-width field (select / date) inside the inset. */
+.cp-inset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cp-select, .cp-date {
+  width: 100%; height: 48px; padding: 0 14px; border: 1px solid var(--bp-border); border-radius: 12px;
+  background: #fff; font: 15px Figtree, system-ui, sans-serif; color: var(--bp-text); cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%235b6675' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.cp-select:focus, .cp-date:focus { outline: none; border-color: var(--bp-blue); box-shadow: 0 0 0 3px rgba(0,121,200,0.12); }
+
+/* Days stepper (− / N days / +). */
+.cp-stepper {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 48px; padding: 0 8px; border: 1px solid var(--bp-border); border-radius: 12px; background: #fff;
+}
+.cp-stepper-btn {
+  width: 34px; height: 34px; display: grid; place-items: center; border: none; background: none;
+  cursor: pointer; color: var(--bp-blue); border-radius: 8px;
+}
+.cp-stepper-btn:hover { background: var(--bp-blue-tint-2); }
+.cp-stepper-btn:disabled { color: var(--bp-muted-2); cursor: not-allowed; }
+.cp-stepper-val { font-size: 16px; color: var(--bp-text); }
+.cp-stepper-val strong { font-weight: 700; color: var(--bp-navy); }
+.cp-stepper-unit { color: var(--bp-muted); font-size: 14px; margin-left: 4px; }
+
+/* ---- D-09 Send: read-only accordion of the saved care plan ---- */
+
+/* The single card that holds every send row. */
+.sd-card {
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-border-2);
+  border-radius: 16px;
+  box-shadow: var(--bp-shadow);
+  overflow: hidden;
+}
+
+/* One send row (collapsed header + optional expanded body). */
+.sd-row { border-top: 1px solid var(--bp-border-2); }
+.sd-row:first-child { border-top: none; }
+
+.sd-head {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 16px 18px; background: none; border: none; cursor: pointer; text-align: left; font: inherit;
+}
+.sd-head:hover { background: var(--bp-blue-tint-2); }
+.sd-icon {
+  flex: none; width: 36px; height: 36px; border-radius: 10px;
+  background: var(--bp-blue-tint); color: var(--bp-blue-dark); display: grid; place-items: center;
+}
+.sd-headmain { flex: 1; min-width: 0; }
+.sd-title { font-size: 15px; font-weight: 700; color: var(--bp-navy); }
+.sd-sub {
+  display: flex; align-items: center; gap: 5px; margin-top: 2px;
+  font-size: 13px; font-weight: 600; color: var(--bp-muted);
+}
+.sd-sub .material-symbols-rounded { font-size: 15px; }
+
+/* Grey "Ready to send" status pill. */
+.sd-status {
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: var(--bp-pill);
+  font: 600 12.5px Figtree, sans-serif; color: var(--bp-muted); background: #eef1f4;
+}
+.sd-status.is-sending { color: var(--bp-warn); background: #fdf1e0; }
+.sd-status.is-sent { color: var(--bp-ok); background: var(--bp-ok-bg); }
+.sd-status.is-error { color: var(--bp-danger); background: var(--bp-danger-bg); }
+
+.sd-chev { flex: none; display: grid; place-items: center; color: var(--bp-muted); transition: transform .15s; }
+.sd-chev.is-open { transform: rotate(180deg); }
+
+/* Expanded body: read-only content from D-08 + "Edit in Review". */
+.sd-body { padding: 0 18px 18px 68px; }
+.sd-field-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--bp-muted); margin-top: 14px;
+}
+.sd-field-label:first-child { margin-top: 0; }
+.sd-field-value { font-size: 14px; line-height: 1.6; color: var(--bp-text); margin-top: 3px; }
+.sd-line { font-size: 14px; line-height: 1.7; color: var(--bp-text); }
+.sd-edit {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+  background: none; border: none; cursor: pointer; padding: 0;
+  font: 700 14px Figtree, sans-serif; color: var(--bp-blue);
+}
+.sd-edit:hover { color: var(--bp-blue-dark); }
+
+/* Footer actions. */
+.sd-actions { display: flex; align-items: center; gap: 18px; }
+.sd-submit {
+  display: inline-flex; align-items: center; gap: 9px; height: 46px; padding: 0 26px;
+  border: none; border-radius: var(--bp-pill); cursor: pointer;
+  font: 700 15px Figtree, sans-serif; background: var(--bp-blue); color: #fff;
+}
+.sd-submit:hover { background: var(--bp-blue-dark); }
+.sd-submit:disabled { background: var(--bp-border); cursor: not-allowed; }
+.sd-back { background: none; border: none; cursor: pointer; font: 600 14px Figtree, sans-serif; color: var(--bp-text-2); }
+.sd-back:hover { color: var(--bp-navy); }
+
+/* ---- D-10 Close consultation ---- */
+
+/* Status banner (green = minimum satisfied, amber = pending). */
+.cl-banner {
+  display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 12px;
+  font-size: 14px; line-height: 1.5;
+}
+.cl-banner.is-ok { background: var(--bp-ok-bg); color: var(--bp-ok); }
+.cl-banner.is-warn { background: var(--bp-warn-bg); color: var(--bp-warn); }
+.cl-banner strong { font-weight: 700; }
+.cl-banner .cl-banner-rest { color: var(--bp-text-2); font-weight: 500; }
+
+/* "What will be sent" card. */
+.cl-card { background: var(--bp-surface); border: 1px solid var(--bp-border-2); border-radius: 14px; overflow: hidden; }
+.cl-card-head {
+  padding: 13px 18px; background: var(--bp-surface-2); border-bottom: 1px solid var(--bp-border-2);
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bp-muted);
+}
+.cl-item {
+  display: flex; align-items: center; gap: 12px; padding: 15px 18px;
+  border-top: 1px solid var(--bp-border-2); font-size: 14.5px; color: var(--bp-text);
+}
+.cl-item:first-of-type { border-top: none; }
+.cl-item-label { flex: 1; min-width: 0; }
+.cl-view { background: none; border: none; cursor: pointer; font: 600 14px Figtree, sans-serif; color: var(--bp-blue); padding: 0; }
+.cl-view:hover { color: var(--bp-blue-dark); text-decoration: underline; }
+
+/* Footer actions. */
+.cl-actions { display: flex; align-items: center; gap: 12px; }
+.cl-close {
+  display: inline-flex; align-items: center; gap: 9px; height: 46px; padding: 0 24px;
+  border: none; border-radius: var(--bp-pill); cursor: pointer;
+  font: 700 15px Figtree, sans-serif; background: var(--bp-blue); color: #fff;
+}
+.cl-close:hover { background: var(--bp-blue-dark); }
+.cl-exception {
+  height: 46px; padding: 0 22px; border: 1.5px solid var(--bp-border); border-radius: var(--bp-pill);
+  background: #fff; cursor: pointer; font: 600 15px Figtree, sans-serif; color: var(--bp-navy);
+}
+.cl-exception:hover { border-color: var(--bp-muted); }
+
+/* ---- Document overlay (prescription / medical certificate) ---- */
+.doc-overlay {
+  position: fixed; inset: 0; z-index: 4000; background: rgba(16, 41, 74, 0.55);
+  display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto;
+}
+.doc-modal {
+  width: 100%; max-width: 760px; background: #fff; border-radius: 18px; box-shadow: var(--bp-shadow-lg);
+  overflow: hidden; animation: bpIn .2s ease;
+}
+.doc-modal-head {
+  display: flex; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--bp-border-2);
+}
+.doc-modal-head h2 { margin: 0; font-size: 17px; font-weight: 700; color: var(--bp-navy); }
+.doc-modal-close {
+  margin-left: auto; width: 34px; height: 34px; display: grid; place-items: center;
+  border: none; background: none; cursor: pointer; color: var(--bp-muted); border-radius: 8px;
+}
+.doc-modal-close:hover { background: var(--bp-surface-2); color: var(--bp-text); }
+
+/* The document "sheet" itself. */
+.doc-sheet { padding: 24px; }
+.doc-sheet-inner { border: 1px solid var(--bp-border-2); border-radius: 14px; padding: 26px 28px; }
+.doc-issuer { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.doc-issuer-sys { font-size: 16px; font-weight: 700; color: var(--bp-blue); }
+.doc-issuer-sub { font-size: 12.5px; color: var(--bp-muted); margin-top: 2px; }
+.doc-issuer-meta { text-align: right; font-size: 13px; color: var(--bp-text-2); line-height: 1.5; }
+.doc-doctype { margin: 16px 0 18px; font-size: 24px; font-weight: 700; color: var(--bp-navy); }
+
+/* PATIENT / PHYSICIAN two-column block. */
+.doc-parties {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  background: var(--bp-surface-2); border-radius: 12px; padding: 16px 18px; margin-bottom: 20px;
+}
+.doc-party-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bp-muted); }
+.doc-party-name { font-size: 15px; font-weight: 700; color: var(--bp-navy); margin-top: 5px; }
+.doc-party-sub { font-size: 13px; color: var(--bp-text-2); margin-top: 3px; line-height: 1.5; }
+
+/* Section label + body. */
+.doc-sec-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--bp-muted); margin: 18px 0 8px;
+}
+.doc-sec-body { font-size: 14px; line-height: 1.6; color: var(--bp-text); }
+
+/* Medicine rows (two-column: drug on left, directions on right). */
+.doc-med { display: grid; grid-template-columns: 220px 1fr; gap: 20px; padding: 10px 0; border-top: 1px solid var(--bp-border-2); }
+.doc-med:first-of-type { border-top: none; }
+.doc-med-name { font-size: 14px; font-weight: 700; color: var(--bp-navy); }
+.doc-med-dir { font-size: 14px; color: var(--bp-text); line-height: 1.5; }
+
+/* Leave rows (label / value). */
+.doc-kv { display: grid; grid-template-columns: 160px 1fr; gap: 16px; padding: 9px 0; border-top: 1px solid var(--bp-border-2); }
+.doc-kv:first-of-type { border-top: none; }
+.doc-kv-label { font-size: 14px; font-weight: 700; color: var(--bp-navy); }
+.doc-kv-value { font-size: 14px; color: var(--bp-text); }
+
+/* Signature footer. */
+.doc-sign { display: flex; align-items: center; gap: 16px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--bp-border-2); }
+.doc-sign-name { font-size: 14px; font-weight: 700; color: var(--bp-navy); }
+.doc-sign-sub { font-size: 12.5px; color: var(--bp-muted); margin-top: 2px; }
+.doc-sign-badge {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
+  border: 1px solid #bcdcc8; border-radius: var(--bp-pill);
+  font: 700 11.5px Figtree, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bp-ok);
+}
+
+@media (max-width: 640px) {
+  .doc-parties, .doc-med, .doc-kv { grid-template-columns: 1fr; gap: 8px; }
+}

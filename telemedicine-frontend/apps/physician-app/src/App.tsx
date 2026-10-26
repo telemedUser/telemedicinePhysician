@@ -17,6 +17,7 @@ import { PatientReviewPage } from './pages/PatientReviewPage';
 import { ConsultationWorkspacePage } from './pages/ConsultationWorkspacePage';
 import { DocumentationPage } from './pages/DocumentationPage';
 import { ReviewPage } from './pages/ReviewPage';
+import { CarePlanPage } from './pages/CarePlanPage';
 import { SendPage } from './pages/SendPage';
 import { ClosePage } from './pages/ClosePage';
 import { WithdrawnPage } from './pages/WithdrawnPage';
@@ -286,7 +287,8 @@ function AuthedShell({ session, onSignOut }: { session: PhysicianSession; onSign
               <Route path="/worklist/:appointmentId/context" element={<PatientContextPage />} />
               <Route path="/consultation/:appointmentId" element={<ConsultationWorkspacePage />} />
               <Route path="/consultation/:appointmentId/documentation" element={<DocumentationPage />} />
-              <Route path="/consultation/:appointmentId/review" element={<ReviewPage />} />
+              <Route path="/consultation/:appointmentId/review" element={<CarePlanPage />} />
+              <Route path="/consultation/:appointmentId/ai-review" element={<ReviewPage />} />
               <Route path="/consultation/:appointmentId/summary" element={<SummaryPage />} />
               <Route path="/consultation/:appointmentId/send" element={<SendPage />} />
               <Route path="/consultation/:appointmentId/close" element={<ClosePage />} />

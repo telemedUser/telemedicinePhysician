@@ -172,3 +172,94 @@ export interface ProviderStatusRequest {
   status: ProviderStatus;
   reason?: string;
 }
+
+/* ---------- D-08 care plan + reference directories ---------- */
+
+/** Options returned by the DB-backed reference directory search endpoints. */
+export interface DiagnosisOption {
+  code: string;
+  title: string;
+  system: string;
+}
+export interface MedicationOption {
+  id: string;
+  name: string;
+  strength?: string | null;
+  form?: string | null;
+}
+export interface DiagnosticTestOption {
+  id: string;
+  name: string;
+  category?: string | null;
+  specimen?: string | null;
+}
+
+/** The four-section clinical note. */
+export interface ClinicalNote {
+  history?: string;
+  findings?: string;
+  assessment?: string;
+  plan?: string;
+}
+
+/** A selected diagnosis on the care plan. */
+export interface CarePlanDiagnosis {
+  code: string;
+  title: string;
+  primary: boolean;
+}
+
+/** A prescribed medication line. */
+export interface CarePlanPrescription {
+  medicationId?: string;
+  name: string;
+  strength?: string;
+  form?: string;
+  dosage?: string;
+  frequency?: string;
+  durationDays?: number | null;
+  quantity?: number | null;
+  instructions?: string;
+}
+
+/** An ordered diagnostic test. */
+export interface CarePlanDiagnosticTest {
+  testId?: string;
+  name: string;
+  category?: string;
+  specimen?: string;
+  note?: string;
+}
+
+export interface CarePlanFollowUp {
+  enabled: boolean;
+  mode?: string;
+  inDays?: number | null;
+  date?: string;
+  instructions?: string;
+}
+
+export interface CarePlanMedicalLeave {
+  enabled: boolean;
+  reason?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface CarePlanSummary {
+  text?: string;
+  instructions?: string;
+}
+
+/** GET/PUT /api/v1/physicians/me/consultations/{id}/care-plan */
+export interface CarePlan {
+  appointmentId: string;
+  note: ClinicalNote;
+  diagnoses: CarePlanDiagnosis[];
+  prescriptions: CarePlanPrescription[];
+  diagnosticTests: CarePlanDiagnosticTest[];
+  followUp: CarePlanFollowUp;
+  medicalLeave: CarePlanMedicalLeave;
+  summary: CarePlanSummary;
+  status: 'DRAFT' | 'APPROVED';
+}

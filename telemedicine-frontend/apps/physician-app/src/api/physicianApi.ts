@@ -5,8 +5,12 @@ import type {
   PhysicianDocumentationPayload,
 } from '@telemedicine/shared-types';
 import type {
+  CarePlan,
   CloseConsultationRequest,
   CloseConsultationResponse,
+  DiagnosisOption,
+  DiagnosticTestOption,
+  MedicationOption,
   PatientDetail,
   ProviderDetail,
   ProviderStatusRequest,
@@ -65,6 +69,62 @@ export function usePhysicianApi() {
           return res.data ?? null;
         } catch {
           return null;
+        }
+      },
+
+      /* ---- D-08 reference directory dropdowns (DB-backed) ---- */
+      async searchDiagnoses(q: string): Promise<DiagnosisOption[]> {
+        try {
+          const res = await client.get<DiagnosisOption[]>(
+            `/v1/physicians/reference/diagnoses?q=${encodeURIComponent(q)}`,
+          );
+          return res.data ?? [];
+        } catch {
+          return [];
+        }
+      },
+      async searchMedications(q: string): Promise<MedicationOption[]> {
+        try {
+          const res = await client.get<MedicationOption[]>(
+            `/v1/physicians/reference/medications?q=${encodeURIComponent(q)}`,
+          );
+          return res.data ?? [];
+        } catch {
+          return [];
+        }
+      },
+      async searchDiagnosticTests(q: string): Promise<DiagnosticTestOption[]> {
+        try {
+          const res = await client.get<DiagnosticTestOption[]>(
+            `/v1/physicians/reference/diagnostic-tests?q=${encodeURIComponent(q)}`,
+          );
+          return res.data ?? [];
+        } catch {
+          return [];
+        }
+      },
+
+      /* ---- D-08 care plan load/save ---- */
+      async getCarePlan(appointmentId: string): Promise<CarePlan | null> {
+        try {
+          const res = await client.get<CarePlan>(
+            `/v1/physicians/me/consultations/${encodeURIComponent(appointmentId)}/care-plan`,
+          );
+          return res.data ?? null;
+        } catch {
+          return null;
+        }
+      },
+      async saveCarePlan(appointmentId: string, plan: CarePlan): Promise<CarePlan | null> {
+        try {
+          const res = await client.put<CarePlan>(
+            `/v1/physicians/me/consultations/${encodeURIComponent(appointmentId)}/care-plan`,
+            plan,
+            { idempotencyKey: crypto.randomUUID() },
+          );
+          return res.data ?? plan;
+        } catch {
+          return plan;
         }
       },
 
