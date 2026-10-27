@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telemedicine.bupa/schemas/events/ConsultationDocumentsIssued/1.0",
+  "type": "object",
+  "required": [
+    "appointmentId",
+    "status",
+    "documentCount",
+    "hasPrescription",
+    "hasMedicalLeave",
+    "hasSummary",
+    "prescriptionNumber",
+    "medicalLeaveNumber",
+    "documentsJson",
+    "issuedAt"
+  ],
+  "properties": {
+    "appointmentId": { "type": "string" },
+    "status": { "type": "string" },
+    "documentCount": { "type": "integer" },
+    "hasPrescription": { "type": "boolean" },
+    "hasMedicalLeave": { "type": "boolean" },
+    "hasSummary": { "type": "boolean" },
+    "prescriptionNumber": { "type": ["string", "null"] },
+    "medicalLeaveNumber": { "type": ["string", "null"] },
+    "documentsJson": { "type": "string" },
+    "issuedAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

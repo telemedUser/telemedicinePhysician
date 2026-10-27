@@ -1222,3 +1222,55 @@ body {
 @media (max-width: 640px) {
   .doc-parties, .doc-med, .doc-kv { grid-template-columns: 1fr; gap: 8px; }
 }
+
+/* ---- D-08 medicine configuration form (shown before a drug is added) ---- */
+
+/* Selected-drug line: name + strength/form + allergy status, with a Change link. */
+.cp-med-selected {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  background: #fff; border: 1px solid var(--bp-border); border-radius: 12px; padding: 14px 16px;
+}
+.cp-med-selected-name { font-size: 15px; font-weight: 700; color: var(--bp-navy); }
+.cp-med-selected-sub { display: flex; align-items: center; gap: 10px; margin-top: 3px; font-size: 13px; color: var(--bp-muted); }
+.cp-allergy-ok { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--bp-ok); }
+.cp-allergy-warn { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--bp-warn); }
+
+/* Quantity field with an AUTO badge (auto badge shows while the value is computed, not overridden). */
+.cp-qty {
+  display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 8px 0 14px;
+  border: 1px solid var(--bp-border); border-radius: 12px; background: #fff;
+}
+.cp-qty-input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  font: 16px Figtree, system-ui, sans-serif; color: var(--bp-text);
+  -moz-appearance: textfield;
+}
+.cp-qty-input::-webkit-outer-spin-button, .cp-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.cp-qty-auto {
+  flex: none; font: 700 11px Figtree, sans-serif; letter-spacing: 0.04em; color: var(--bp-muted);
+  background: #eef1f4; padding: 4px 9px; border-radius: 6px;
+}
+
+/* ---- D-10 post-close delivery toasts (dark cards, top-right) ---- */
+.cl-toasts {
+  position: fixed; top: 16px; right: 16px; z-index: 5000;
+  display: flex; flex-direction: column; gap: 10px; width: 340px; max-width: calc(100vw - 32px);
+}
+.cl-toast {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--bp-navy); color: #fff; border-radius: 12px; padding: 13px 14px;
+  box-shadow: var(--bp-shadow-lg); animation: bpIn .18s ease;
+}
+.cl-toast-title { font: 700 13.5px Figtree, sans-serif; }
+.cl-toast-body { margin-top: 3px; font-size: 12.5px; line-height: 1.45; color: #c9d6e6; }
+.cl-toast-close { flex: none; background: none; border: none; cursor: pointer; display: flex; padding: 2px; }
+
+/* D-10 delivery-status row: status in a right-aligned column, View in its own fixed column so
+   rows line up whether or not a row has a View action (matches the prototype spacing). */
+.cl-delivery {
+  display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;
+  min-width: 150px; font: 600 13px Figtree, sans-serif;
+}
+.cl-delivery.is-sending { color: var(--bp-blue); }
+.cl-delivery.is-delivered { color: var(--bp-ok); }
+.cl-view-col { flex: none; width: 56px; text-align: right; }

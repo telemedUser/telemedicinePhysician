@@ -82,6 +82,65 @@ const LEAVE_TYPES = [
   'Mental health',
 ];
 
+/** Dosing frequency options, with the number of doses per day used to auto-compute quantity. */
+const FREQUENCY_OPTIONS: { label: string; perDay: number }[] = [
+  { label: 'Once daily', perDay: 1 },
+  { label: 'Every 12 h', perDay: 2 },
+  { label: 'Every 8 h', perDay: 3 },
+  { label: 'Every 6 h', perDay: 4 },
+  { label: 'Twice daily', perDay: 2 },
+  { label: 'Three times daily', perDay: 3 },
+  { label: 'As needed', perDay: 1 },
+];
+
+/** Auto quantity = doses/day (from the chosen frequency) × duration in days. */
+function autoQuantity(frequency: string | undefined, durationDays: number): number {
+  const match = FREQUENCY_OPTIONS.find((f) => f.label === frequency);
+  const perDay = match?.perDay ?? 1;
+  return Math.max(1, perDay * Math.max(1, durationDays));
+}
+
+/**
+ * Lightweight allergy check against the clinical note's assessment/history text. The note is where
+ * allergies are documented on this screen (e.g. "Penicillin allergy"). If the drug family appears
+ * in that text, we flag a conflict so the physician sees it before prescribing. This is a safety
+ * surface, not a substitute for a full interactions engine.
+ */
+function conflictsWithAllergies(drugName: string, plan: CarePlan): boolean {
+  const noteText = `${plan.note.history ?? ''} ${plan.note.assessment ?? ''} ${plan.note.plan ?? ''}`.toLowerCase();
+  if (!noteText.includes('allerg')) return false;
+  const name = drugName.toLowerCase();
+  // Map a few common drug families so "Penicillin allergy" flags amoxicillin/ampicillin, etc.
+  const families: Record<string, string[]> = {
+    penicillin: ['penicillin', 'amoxicillin', 'ampicillin', 'flucloxacillin', 'co-amoxiclav'],
+    sulfa: ['sulfa', 'sulfamethoxazole', 'cotrimoxazole', 'trimethoprim'],
+    cephalosporin: ['cephalosporin', 'cefalexin', 'cephalexin', 'cefuroxime', 'ceftriaxone'],
+    nsaid: ['nsaid', 'ibuprofen', 'naproxen', 'diclofenac', 'aspirin'],
+    macrolide: ['macrolide', 'azithromycin', 'clarithromycin', 'erythromycin'],
+  };
+  for (const members of Object.values(families)) {
+    const allergyMentioned = members.some((m) => noteText.includes(m));
+    const drugInFamily = members.some((m) => name.includes(m));
+    if (allergyMentioned && drugInFamily) return true;
+  }
+  return false;
+}
+
+/** A medicine being configured before it is added to the prescription (the "Medicine N" form). */
+interface MedDraft {
+  medicationId?: string;
+  name: string;
+  strength?: string;
+  form?: string;
+  /** true when the drug does not conflict with the patient's known allergies. */
+  noAllergyConflict: boolean;
+  frequency: string;
+  durationDays: number;
+  /** null → auto (computed); a number → the physician overrode it. */
+  quantity: number | null;
+  instructions: string;
+}
+
 /**
  * D-08 physician Review / Care plan, styled to the prototype:
  *  - a warm "AI draft" clinical-note card (History/Findings/Assessment/Plan, inline edit)
@@ -108,6 +167,8 @@ export function CarePlanPage() {
   const [addDiagnosis, setAddDiagnosis] = useState(false);
   const [addMedicine, setAddMedicine] = useState(false);
   const [addTest, setAddTest] = useState(false);
+  // The medicine being configured before it is committed to the prescription (null = search only).
+  const [medDraft, setMedDraft] = useState<MedDraft | null>(null);
 
   // Follow-up / medical-leave inset editor open states (summary shown when closed).
   const [editFollowUp, setEditFollowUp] = useState(false);
@@ -314,20 +375,62 @@ export function CarePlanPage() {
           {addMedicine && (
             <div className="cp-medbox">
               <div className="cp-medbox-title">Medicine {plan.prescriptions.length + 1}</div>
-              <SearchDropdown<MedicationOption>
-                autoFocus
-                placeholder="Search medication — try amoxicillin"
-                search={(q) => api.searchMedications(q)}
-                renderLabel={(o) => `${o.name}${o.strength ? ` · ${o.strength}` : ''}`}
-                renderSub={(o) => o.form ?? undefined}
-                onSelect={(o) => {
-                  updAndSave({ prescriptions: [...plan.prescriptions, { medicationId: o.id, name: o.name, strength: o.strength ?? undefined, form: o.form ?? undefined }] });
-                  setAddMedicine(false);
-                }}
-              />
-              <div style={{ marginTop: 10 }}>
-                <button type="button" className="cp-link" onClick={() => setAddMedicine(false)}>Cancel</button>
-              </div>
+              {!medDraft ? (
+                // Step 1 — pick the drug from the directory. Picking does NOT add it yet.
+                <>
+                  <SearchDropdown<MedicationOption>
+                    autoFocus
+                    placeholder="Search medication — try amoxicillin"
+                    search={(q) => api.searchMedications(q)}
+                    renderLabel={(o) => `${o.name}${o.strength ? ` · ${o.strength}` : ''}`}
+                    renderSub={(o) => o.form ?? undefined}
+                    onSelect={(o) =>
+                      setMedDraft({
+                        medicationId: o.id,
+                        name: o.name,
+                        strength: o.strength ?? undefined,
+                        form: o.form ?? undefined,
+                        noAllergyConflict: !conflictsWithAllergies(o.name, plan),
+                        frequency: FREQUENCY_OPTIONS[0].label,
+                        durationDays: 5,
+                        quantity: null,
+                        instructions: '',
+                      })
+                    }
+                  />
+                  <div style={{ marginTop: 10 }}>
+                    <button type="button" className="cp-link" onClick={() => setAddMedicine(false)}>Cancel</button>
+                  </div>
+                </>
+              ) : (
+                // Step 2 — configure dose/frequency/duration/quantity/instructions, then Add.
+                <MedicineForm
+                  draft={medDraft}
+                  onChange={(patch) => setMedDraft((d) => (d ? { ...d, ...patch } : d))}
+                  onChangeDrug={() => setMedDraft(null)}
+                  onCancel={() => { setMedDraft(null); setAddMedicine(false); }}
+                  onAdd={() => {
+                    const qty = medDraft.quantity ?? autoQuantity(medDraft.frequency, medDraft.durationDays);
+                    updAndSave({
+                      prescriptions: [
+                        ...plan.prescriptions,
+                        {
+                          medicationId: medDraft.medicationId,
+                          name: medDraft.name,
+                          strength: medDraft.strength,
+                          form: medDraft.form,
+                          frequency: medDraft.frequency,
+                          durationDays: medDraft.durationDays,
+                          quantity: qty,
+                          instructions: medDraft.instructions.trim() || undefined,
+                        },
+                      ],
+                    });
+                    setMedDraft(null);
+                    setAddMedicine(false);
+                  }}
+                />
+              )}
             </div>
           )}
           {addTest && (
@@ -531,10 +634,20 @@ export function CarePlanPage() {
         />
       </div>
 
-      <div>
-        <BpButton icon="arrow_forward" onClick={() => void persist(plan).then(() => navigate(`/consultation/${appointmentId}/send`))}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+        <BpButton
+          icon="arrow_forward"
+          disabled={!noteApproved}
+          onClick={() => void persist(plan).then(() => navigate(`/consultation/${appointmentId}/send`))}
+        >
           Continue to send
         </BpButton>
+        {!noteApproved && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--bp-muted)' }}>
+            <Icon name="info" size={16} color="var(--bp-muted)" />
+            Approve the clinical note to continue.
+          </span>
+        )}
       </div>
     </div>
   );
@@ -562,7 +675,14 @@ function EditRow({
     <div className="cp-row">
       <span className="cp-row-label">{label}</span>
       {editing ? (
-        <textarea className="cp-edit-field" autoFocus rows={3} value={value ?? ''} onChange={(e) => onChange(e.target.value)} onBlur={onDone} data-phi="true" />
+        <textarea
+          className="cp-edit-field"
+          autoFocus
+          rows={3}
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          data-phi="true"
+        />
       ) : (
         <span className={value && value.trim() ? 'cp-row-value' : 'cp-row-value is-empty'} data-phi="true">
           {value && value.trim() ? value : emptyText}
@@ -640,6 +760,105 @@ function PrescriptionRow({
           <div style={{ marginTop: 10 }}><button type="button" className="cp-link" onClick={() => setOpen(false)}>Done</button></div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * The "Medicine N" configuration form shown after a drug is picked but before it is added:
+ * selected drug + allergy check + Change, Frequency, Duration stepper, Quantity (AUTO), Instructions,
+ * then Add medication / Cancel. Matches the D-08 prototype.
+ */
+function MedicineForm({
+  draft,
+  onChange,
+  onChangeDrug,
+  onCancel,
+  onAdd,
+}: {
+  draft: MedDraft;
+  onChange: (patch: Partial<MedDraft>) => void;
+  onChangeDrug: () => void;
+  onCancel: () => void;
+  onAdd: () => void;
+}) {
+  const autoQty = autoQuantity(draft.frequency, draft.durationDays);
+  const qtyValue = draft.quantity ?? autoQty;
+  const isAuto = draft.quantity === null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Selected drug + allergy status + Change */}
+      <div className="cp-med-selected">
+        <div>
+          <div className="cp-med-selected-name">{draft.name}</div>
+          <div className="cp-med-selected-sub">
+            {draft.strength ? `${draft.strength} ` : ''}{draft.form ?? ''}
+            {draft.noAllergyConflict ? (
+              <span className="cp-allergy-ok"><Icon name="check_circle" size={14} />No allergy conflict</span>
+            ) : (
+              <span className="cp-allergy-warn"><Icon name="warning" size={14} />Possible allergy conflict</span>
+            )}
+          </div>
+        </div>
+        <button type="button" className="cp-link" style={{ color: 'var(--bp-blue)' }} onClick={onChangeDrug}>Change</button>
+      </div>
+
+      {/* Frequency */}
+      <div>
+        <span className="cp-inset-label" style={{ marginTop: 0 }}>Frequency</span>
+        <select className="cp-select" value={draft.frequency} onChange={(e) => onChange({ frequency: e.target.value })}>
+          {FREQUENCY_OPTIONS.map((f) => <option key={f.label} value={f.label}>{f.label}</option>)}
+        </select>
+      </div>
+
+      {/* Duration + Quantity */}
+      <div className="cp-inset-grid">
+        <div>
+          <span className="cp-inset-label" style={{ marginTop: 0 }}>Duration</span>
+          <div className="cp-stepper">
+            <button type="button" className="cp-stepper-btn" aria-label="Fewer days" disabled={draft.durationDays <= 1}
+              onClick={() => onChange({ durationDays: Math.max(1, draft.durationDays - 1) })}>
+              <Icon name="remove" size={18} />
+            </button>
+            <span className="cp-stepper-val"><strong>{draft.durationDays}</strong><span className="cp-stepper-unit">days</span></span>
+            <button type="button" className="cp-stepper-btn" aria-label="More days"
+              onClick={() => onChange({ durationDays: draft.durationDays + 1 })}>
+              <Icon name="add" size={18} />
+            </button>
+          </div>
+        </div>
+        <div>
+          <span className="cp-inset-label" style={{ marginTop: 0 }}>Quantity</span>
+          <div className="cp-qty">
+            <input
+              className="cp-qty-input"
+              type="number"
+              min={1}
+              value={qtyValue}
+              onChange={(e) => onChange({ quantity: e.target.value ? Number(e.target.value) : null })}
+            />
+            {isAuto && <span className="cp-qty-auto">AUTO</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* Instructions */}
+      <div>
+        <span className="cp-inset-label" style={{ marginTop: 0 }}>Instructions for the patient</span>
+        <input
+          className="cp-edit-field"
+          value={draft.instructions}
+          placeholder="e.g. Take with food · finish the full course"
+          onChange={(e) => onChange({ instructions: e.target.value })}
+        />
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <button type="button" className="cp-done" style={{ marginTop: 0 }} onClick={onAdd}>Add medication</button>
+        <button type="button" className="cp-link" onClick={onCancel}>Cancel</button>
+      </div>
     </div>
   );
 }

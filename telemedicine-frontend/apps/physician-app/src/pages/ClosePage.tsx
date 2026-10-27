@@ -34,6 +34,11 @@ function inclusiveDays(start?: string, end?: string): number {
   return Math.max(1, Math.round((e.getTime() - s.getTime()) / 86400000) + 1);
 }
 
+/** HH:MM clock label. */
+function fmtClock(d: Date): string {
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
 /** Deterministic document number from the appointment id, so it is stable (not random per render). */
 function docNumber(prefix: string, appointmentId: string, salt: number): string {
   let h = salt;
@@ -55,8 +60,46 @@ export function ClosePage() {
   const [showException, setShowException] = useState(false);
   const [reason, setReason] = useState('');
   const [closed, setClosed] = useState(false);
+  const [closedAt, setClosedAt] = useState<Date | null>(null);
+  const [delivered, setDelivered] = useState(false);
+  const [deliveredAt, setDeliveredAt] = useState<Date | null>(null);
+  const [toasts, setToasts] = useState<{ id: string; title: string; body: string }[]>([]);
 
   const session = getPhysicianSession();
+
+  const pushToast = (title: string, body: string) => {
+    const id = crypto.randomUUID();
+    setToasts((prev) => [...prev, { id, title, body }]);
+    window.setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 8000);
+  };
+
+  // After close, poll the patient-side documents projection (via the physician host's /booking-api
+  // proxy) until the ConsultationDocumentsIssued event has been received and projected — then flip
+  // the delivery status from "Sending…" to "Delivered" and raise the "Documents delivered" toast.
+  useEffect(() => {
+    if (!closed || delivered) return;
+    let active = true;
+    const poll = () => {
+      void fetch(`/booking-api/consultations/${encodeURIComponent(appointmentId)}/documents`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { status?: string } | null) => {
+          if (active && d && d.status === 'ISSUED') {
+            const at = new Date();
+            setDelivered(true);
+            setDeliveredAt(at);
+            pushToast('Documents delivered · ' + fmtClock(at), "Prescription, medical leave and summary are in the patient's app.");
+          }
+        })
+        .catch(() => undefined);
+    };
+    poll();
+    const timer = window.setInterval(poll, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [closed, delivered, appointmentId]);
 
   useEffect(() => {
     let active = true;
@@ -124,23 +167,6 @@ export function ClosePage() {
     );
   }
 
-  if (closed) {
-    return (
-      <Card style={{ textAlign: 'center', padding: 48, borderTop: '4px solid var(--bp-ok-2)' }}>
-        <Icon name="check_circle" size={44} color="var(--bp-ok)" fill />
-        <h2 style={{ margin: '12px 0 4px' }}>Consultation closed</h2>
-        <p style={{ color: 'var(--bp-muted)' }}>
-          {showException ? `Exception recorded: ${reason || '—'}` : 'All documents issued and sent.'}
-        </p>
-        <div style={{ marginTop: 16 }}>
-          <Link to="/worklist">
-            <BpButton icon="list_alt">Back to worklist</BpButton>
-          </Link>
-        </div>
-      </Card>
-    );
-  }
-
   const p = plan;
   const leaveDays = inclusiveDays(p?.medicalLeave.startDate, p?.medicalLeave.endDate);
   const medNames = (p?.prescriptions ?? []).map((m) => m.name).filter(Boolean).join(', ');
@@ -173,6 +199,60 @@ export function ClosePage() {
     .filter(Boolean)
     .join(' · ');
 
+  // ===== Closed: delivery-status view (post-close) =====
+  if (closed) {
+    const statusLabel = delivered
+      ? `Delivered ${deliveredAt ? fmtClock(deliveredAt) : ''}`
+      : 'Sending…';
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <ToastStack toasts={toasts} onClose={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ flex: 'none', width: 44, height: 44, borderRadius: '50%', background: 'var(--bp-ok-bg)', display: 'grid', placeItems: 'center' }}>
+            <Icon name="check_circle" size={24} color="var(--bp-ok)" fill />
+          </span>
+          <div>
+            <h1 className="cp-title" style={{ fontSize: 24 }}>Consultation closed</h1>
+            <p style={{ margin: '2px 0 0', color: 'var(--bp-muted)', fontSize: 14 }}>
+              Closed {closedAt ? fmtClock(closedAt) : ''}
+              {headerMeta ? ` · ${headerMeta}` : ''}
+            </p>
+          </div>
+        </div>
+
+        <div className="cl-card">
+          <div className="cl-card-head">Delivery status</div>
+          {items.map((it) => (
+            <div className="cl-item" key={it.key}>
+              <span className="cl-item-label">{it.label}</span>
+              <span className={delivered ? 'cl-delivery is-delivered' : 'cl-delivery is-sending'}>
+                <Icon name={delivered ? 'check_circle' : 'send'} size={15} />
+                {statusLabel}
+              </span>
+              <span className="cl-view-col">
+                {it.onView && <button type="button" className="cl-view" onClick={it.onView}>View</button>}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <Link to="/worklist">
+            <BpButton icon="arrow_forward">Back to worklist</BpButton>
+          </Link>
+        </div>
+
+        {openDoc === 'prescription' && p && (
+          <PrescriptionModal plan={p} parties={parties} meta={rxMeta} onClose={() => setOpenDoc(null)} />
+        )}
+        {openDoc === 'leave' && p && (
+          <MedicalCertificateModal plan={p} parties={parties} meta={mlMeta} durationDays={leaveDays} onClose={() => setOpenDoc(null)} />
+        )}
+      </div>
+    );
+  }
+
   const doClose = (exception: boolean) => {
     void api
       .closeConsultation(appointmentId, {
@@ -185,7 +265,12 @@ export function ClosePage() {
         ],
         exceptionReason: exception ? reason : undefined,
       })
-      .finally(() => setClosed(true));
+      .finally(() => {
+        const at = new Date();
+        setClosedAt(at);
+        setClosed(true);
+        pushToast('ConsultationClosed recorded · ' + fmtClock(at), 'Consultation ' + appointmentId + ' · patient notified');
+      });
   };
 
   return (
@@ -258,6 +343,33 @@ export function ClosePage() {
       {openDoc === 'leave' && p && (
         <MedicalCertificateModal plan={p} parties={parties} meta={mlMeta} durationDays={leaveDays} onClose={() => setOpenDoc(null)} />
       )}
+    </div>
+  );
+}
+
+/** Top-right transient notifications (dark cards) shown after close, matching the D-10 prototype. */
+function ToastStack({
+  toasts,
+  onClose,
+}: {
+  toasts: { id: string; title: string; body: string }[];
+  onClose: (id: string) => void;
+}) {
+  if (toasts.length === 0) return null;
+  return (
+    <div className="cl-toasts">
+      {toasts.map((t) => (
+        <div className="cl-toast" key={t.id}>
+          <Icon name="notifications" size={18} color="#9fb4cc" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="cl-toast-title">{t.title}</div>
+            <div className="cl-toast-body">{t.body}</div>
+          </div>
+          <button type="button" className="cl-toast-close" aria-label="Dismiss" onClick={() => onClose(t.id)}>
+            <Icon name="close" size={16} color="#9fb4cc" />
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

@@ -62,6 +62,9 @@ events:
   - type: MedicalLeaveIssued
     version: "1.0"
     producer: clinical-docs-service
+  - type: ConsultationDocumentsIssued
+    version: "1.0"
+    producer: physician-service
   - type: ConsultationClosed
     version: "1.0"
     producer: integration-service

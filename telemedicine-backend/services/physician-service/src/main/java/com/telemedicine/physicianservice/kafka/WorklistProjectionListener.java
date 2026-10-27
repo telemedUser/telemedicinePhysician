@@ -7,6 +7,7 @@ import com.telemedicine.common.events.EventEnvelope;
 import com.telemedicine.common.events.EventTypes;
 import com.telemedicine.common.events.consumer.IdempotentConsumer;
 import com.telemedicine.common.events.payload.AppointmentCreated;
+import com.telemedicine.common.events.payload.ConsultationClosed;
 import com.telemedicine.common.events.payload.ConsultationContextPublished;
 import com.telemedicine.common.events.payload.DeviceTestCompleted;
 import com.telemedicine.common.events.payload.PatientEnteredWaitingRoom;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Maintains the worklist read model (PRD §12.3) from waiting-room events. Each handler is
@@ -82,50 +84,72 @@ public class WorklistProjectionListener {
 
     @DomainEventListener(EventTypes.PATIENT_ENTERED_WAITING_ROOM)
     @IdempotentConsumer
+    @Transactional
     public void onPatientEntered(ConsumerRecord<String, byte[]> record, Acknowledgment ack)
             throws Exception {
         EventEnvelope<PatientEnteredWaitingRoom> envelope =
                 readEnvelope(record.value(), PatientEnteredWaitingRoom.class);
         PatientEnteredWaitingRoom payload = envelope.payload();
-        WorklistItemEntity item = findOrCreate(payload.appointmentId());
-        item.setPatientRef(payload.patientRef());
-        item.setEnteredAt(payload.enteredAt());
-        // Entering the waiting room means "arrived, checks in progress". Do NOT regress readiness
-        // if the DeviceTestCompleted event already advanced it to READY (events for the same join
-        // arrive on independent topics, so ordering is not guaranteed — TM-INT-013).
-        if (!"READY".equals(item.getReadiness())) {
-            item.setReadiness("IN_PROGRESS");
+        Instant enteredAt = payload.enteredAt() != null ? payload.enteredAt() : Instant.now();
+
+        // Stamp arrival with an atomic UPDATE so it cannot be clobbered by the AppointmentCreated /
+        // DeviceTestCompleted handlers running concurrently on other consumer threads (they share
+        // the row; a read-modify-write would lose this write under @Version optimistic locking).
+        int updated = worklistItemRepository.markEntered(
+                payload.appointmentId(), enteredAt, payload.patientRef(), Instant.now());
+        if (updated == 0) {
+            // Row not created yet (AppointmentCreated hasn't been consumed) — create it now.
+            WorklistItemEntity item = findOrCreate(payload.appointmentId());
+            item.setPatientRef(payload.patientRef());
+            item.setEnteredAt(enteredAt);
+            if (!"READY".equals(item.getReadiness())) {
+                item.setReadiness("IN_PROGRESS");
+            }
+            save(item);
         }
-        save(item);
+        log.info("Worklist arrival stamped for {} (enteredAt={})", payload.appointmentId(), enteredAt);
         ack.acknowledge();
     }
 
     @DomainEventListener(EventTypes.DEVICE_TEST_COMPLETED)
     @IdempotentConsumer
+    @Transactional
     public void onDeviceTest(ConsumerRecord<String, byte[]> record, Acknowledgment ack)
             throws Exception {
         EventEnvelope<DeviceTestCompleted> envelope =
                 readEnvelope(record.value(), DeviceTestCompleted.class);
         DeviceTestCompleted payload = envelope.payload();
-        WorklistItemEntity item = findOrCreate(payload.appointmentId());
         boolean ready = payload.cameraOk() && payload.microphoneOk() && payload.bandwidthKbps() > 0;
-        item.setReadiness(ready ? "READY" : "NOT_READY");
-        item.setTechnicalStatus(ready ? "OK" : "IMPAIRED");
-        save(item);
+        String readiness = ready ? "READY" : "NOT_READY";
+        String tech = ready ? "OK" : "IMPAIRED";
+        // Atomic update so it does not clobber the concurrent arrival stamp (enteredAt) on the same
+        // row (events for one join arrive on independent topics / consumer threads — TM-INT-013).
+        int updated = worklistItemRepository.markDeviceTest(payload.appointmentId(), readiness, tech, Instant.now());
+        if (updated == 0) {
+            WorklistItemEntity item = findOrCreate(payload.appointmentId());
+            item.setReadiness(readiness);
+            item.setTechnicalStatus(tech);
+            save(item);
+        }
         ack.acknowledge();
     }
 
     @DomainEventListener(EventTypes.STATUS_CHANGED)
     @IdempotentConsumer
+    @Transactional
     public void onStatusChanged(ConsumerRecord<String, byte[]> record, Acknowledgment ack)
             throws Exception {
         EventEnvelope<StatusChanged> envelope = readEnvelope(record.value(), StatusChanged.class);
         StatusChanged payload = envelope.payload();
-        WorklistItemEntity item = findOrCreate(payload.appointmentId());
         if (payload.toStatus() != null) {
-            item.setConsultationStatus(payload.toStatus().toUpperCase(java.util.Locale.ROOT));
+            String status = payload.toStatus().toUpperCase(java.util.Locale.ROOT);
+            int updated = worklistItemRepository.markStatus(payload.appointmentId(), status, Instant.now());
+            if (updated == 0) {
+                WorklistItemEntity item = findOrCreate(payload.appointmentId());
+                item.setConsultationStatus(status);
+                save(item);
+            }
         }
-        save(item);
         ack.acknowledge();
     }
 
@@ -134,6 +158,27 @@ public class WorklistProjectionListener {
      * Projects it into the {@code patient_detail} read model that backs the physician detail page.
      * Last-writer-wins on appointmentId; stores only what the event carries.
      */
+    /**
+     * The physician closed the consultation (D-10). Flip the worklist row to CLOSED so Home and the
+     * Worklist show "Completed". Atomic status update so it cannot be clobbered by a racing event.
+     */
+    @DomainEventListener(EventTypes.CONSULTATION_CLOSED)
+    @IdempotentConsumer
+    @Transactional
+    public void onConsultationClosed(ConsumerRecord<String, byte[]> record, Acknowledgment ack)
+            throws Exception {
+        EventEnvelope<ConsultationClosed> envelope = readEnvelope(record.value(), ConsultationClosed.class);
+        ConsultationClosed payload = envelope.payload();
+        int updated = worklistItemRepository.markStatus(payload.appointmentId(), "CLOSED", Instant.now());
+        if (updated == 0) {
+            WorklistItemEntity item = findOrCreate(payload.appointmentId());
+            item.setConsultationStatus("CLOSED");
+            save(item);
+        }
+        log.info("Worklist marked CLOSED for {}", payload.appointmentId());
+        ack.acknowledge();
+    }
+
     @DomainEventListener(EventTypes.CONSULTATION_CONTEXT_PUBLISHED)
     @IdempotentConsumer
     public void onConsultationContext(ConsumerRecord<String, byte[]> record, Acknowledgment ack)

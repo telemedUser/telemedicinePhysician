@@ -19,6 +19,7 @@ ConnectionQualityDegraded
 ClinicalDocumentIssued
 PrescriptionIssued
 MedicalLeaveIssued
+ConsultationDocumentsIssued
 ConsultationClosed
 SurveyRequested
 SurveyCompleted
@@ -48,6 +49,7 @@ ConnectionQualityDegraded.DLQ
 ClinicalDocumentIssued.DLQ
 PrescriptionIssued.DLQ
 MedicalLeaveIssued.DLQ
+ConsultationDocumentsIssued.DLQ
 ConsultationClosed.DLQ
 SurveyRequested.DLQ
 SurveyCompleted.DLQ
@@ -77,6 +79,7 @@ ConnectionQualityDegraded.RETRY
 ClinicalDocumentIssued.RETRY
 PrescriptionIssued.RETRY
 MedicalLeaveIssued.RETRY
+ConsultationDocumentsIssued.RETRY
 ConsultationClosed.RETRY
 SurveyRequested.RETRY
 SurveyCompleted.RETRY

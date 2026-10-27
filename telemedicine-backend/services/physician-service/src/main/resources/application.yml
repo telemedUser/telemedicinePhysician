@@ -40,6 +40,12 @@ spring:
     validate-on-migrate: false
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      # The shared java-common-events KafkaEventPublisher sends a byte[] value. When spring.kafka is
+      # present, Spring Boot's default ProducerFactory would otherwise win with a StringSerializer
+      # and fail on the byte[] body (ClassCastException), so pin the value serializer here.
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
 
 telemedicine:
   security:

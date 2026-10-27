@@ -29,7 +29,9 @@ function shortName(displayName?: string): string {
 function clockOf(iso?: string): string {
   if (!iso) return '—';
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (Number.isNaN(d.getTime())) return '—';
+  // Date + time, e.g. "22 Oct, 16:20", so the clinic reads when as well as what time.
+  return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
 /** Map the shared chip colour to an icon/text colour for the Home "Today" table. */

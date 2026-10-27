@@ -53,6 +53,9 @@ public final class EventTypes {
     public static final String PRESCRIPTION_ISSUED = "PrescriptionIssued";
     public static final String MEDICAL_LEAVE_ISSUED = "MedicalLeaveIssued";
 
+    // --- Consultation documents issued on close (physician-service) ---
+    public static final String CONSULTATION_DOCUMENTS_ISSUED = "ConsultationDocumentsIssued";
+
     // --- Consultation closure and survey ---
     public static final String CONSULTATION_CLOSED = "ConsultationClosed";
     public static final String SURVEY_REQUESTED = "SurveyRequested";
@@ -91,6 +94,7 @@ public final class EventTypes {
                     CLINICAL_DOCUMENT_ISSUED,
                     PRESCRIPTION_ISSUED,
                     MEDICAL_LEAVE_ISSUED,
+                    CONSULTATION_DOCUMENTS_ISSUED,
                     CONSULTATION_CLOSED,
                     SURVEY_REQUESTED,
                     SURVEY_COMPLETED,

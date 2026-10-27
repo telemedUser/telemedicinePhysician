@@ -1,7 +1,10 @@
 package com.telemedicine.physicianservice.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.telemedicine.common.events.EventPublisher;
 import com.telemedicine.common.events.payload.ConsultationClosed;
+import com.telemedicine.common.events.payload.ConsultationDocumentsIssued;
+import com.telemedicine.physicianservice.api.dto.CarePlanDto;
 import com.telemedicine.physicianservice.api.dto.CloseConsultationRequest;
 import com.telemedicine.physicianservice.api.dto.CloseConsultationResponse;
 import com.telemedicine.physicianservice.config.PhysicianServiceProperties;
@@ -29,14 +32,73 @@ public class ConsultationClosureService {
     private final ConsultationClosureRepository closureRepository;
     private final PhysicianServiceProperties properties;
     private final EventPublisher eventPublisher;
+    private final CarePlanService carePlanService;
+    private final ObjectMapper objectMapper;
 
     public ConsultationClosureService(
             ConsultationClosureRepository closureRepository,
             PhysicianServiceProperties properties,
-            EventPublisher eventPublisher) {
+            EventPublisher eventPublisher,
+            CarePlanService carePlanService,
+            ObjectMapper objectMapper) {
         this.closureRepository = closureRepository;
         this.properties = properties;
         this.eventPublisher = eventPublisher;
+        this.carePlanService = carePlanService;
+        this.objectMapper = objectMapper;
+    }
+
+    /**
+     * Deterministic document number from the appointment id, matching the physician D-10 UI so the
+     * number the physician saw is the same one the patient receives. Mirrors the frontend
+     * docNumber(prefix, appointmentId, salt): a 7-digit number seeded by a salt + char hash.
+     */
+    private static String docNumber(String prefix, String appointmentId, int salt) {
+        long h = salt & 0xffffffffL;
+        for (int i = 0; i < appointmentId.length(); i++) {
+            h = (h * 31 + appointmentId.charAt(i)) & 0xffffffffL;
+        }
+        long n = (h % 9_000_000L) + 1_000_000L;
+        return prefix + "-" + n;
+    }
+
+    /**
+     * Load the saved care plan and publish a {@link ConsultationDocumentsIssued} event carrying the
+     * issued documents. The full plan DTO is serialized into the opaque {@code documentsJson}
+     * scalar; the flat event fields expose only presence flags, counts and document numbers.
+     */
+    private void publishDocumentsIssued(String appointmentId, Instant issuedAt) {
+        try {
+            CarePlanDto plan = carePlanService.get(appointmentId);
+            boolean hasRx = plan.prescriptions() != null && !plan.prescriptions().isEmpty();
+            boolean hasLeave = plan.medicalLeave() != null && plan.medicalLeave().enabled();
+            boolean hasSummary =
+                    plan.summary() != null
+                            && ((plan.summary().text() != null && !plan.summary().text().isBlank())
+                                    || (plan.summary().instructions() != null
+                                            && !plan.summary().instructions().isBlank()));
+            // Summary + diagnosis + optional prescription + optional leave + receipt.
+            int docCount = 2 + (hasRx ? 1 : 0) + (hasLeave ? 1 : 0) + 1;
+            String rxNumber = hasRx ? docNumber("Rx", appointmentId, 7) : null;
+            String leaveNumber = hasLeave ? docNumber("ML", appointmentId, 13) : null;
+            String documentsJson = objectMapper.writeValueAsString(plan);
+
+            eventPublisher.publish(
+                    appointmentId,
+                    new ConsultationDocumentsIssued(
+                            appointmentId,
+                            "ISSUED",
+                            docCount,
+                            hasRx,
+                            hasLeave,
+                            hasSummary,
+                            rxNumber,
+                            leaveNumber,
+                            documentsJson,
+                            issuedAt));
+        } catch (RuntimeException | com.fasterxml.jackson.core.JsonProcessingException e) {
+            log.warn("Could not publish ConsultationDocumentsIssued for {}", appointmentId, e);
+        }
     }
 
     @Transactional
@@ -84,6 +146,13 @@ public class ConsultationClosureService {
         // Emitted via the transactional outbox; delivery is awaited after commit by the publisher.
         eventPublisher.publish(
                 appointmentId, new ConsultationClosed(appointmentId, "COMPLETED", durationSeconds, now));
+
+        // Publish the issued documents so the patient domain can project a "documents ready" read
+        // model for the post-consultation screen. The clinical detail rides in an opaque JSON
+        // scalar (documentsJson), keeping the event body PHI-field-name free like the catalogue
+        // requires. Never let a publish failure break the close.
+        publishDocumentsIssued(appointmentId, now);
+
         log.info(
                 "Consultation {} closed (minimumSatisfied={}, exception={})",
                 appointmentId,
