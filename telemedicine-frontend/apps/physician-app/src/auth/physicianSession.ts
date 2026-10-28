@@ -2,9 +2,11 @@
  * Lightweight physician session for local/dev auth. Holds the signed-in physician's id, name and
  * email. The id (e.g. "doc-khanna") is sent on every API request as the X-Physician-Id header, which
  * the physician-service dev security chain turns into the authenticated principal — so the worklist
- * is scoped to the signed-in doctor. Persisted to localStorage so a page refresh keeps the session.
+ * is scoped to the signed-in doctor.
  *
- * This mirrors the patient app's thin in-app auth pattern; it is not a replacement for the Keycloak
+ * Session-scoped by design: it is held in memory only (not persisted), so a fresh page load always
+ * returns to the physician login screen and requires re-sign-in. Navigation within the open tab
+ * stays signed in. This mirrors the patient app pattern; it is not a replacement for the Keycloak
  * JWT flow used in a real environment.
  */
 export interface PhysicianSession {
@@ -13,18 +15,8 @@ export interface PhysicianSession {
   email: string;
 }
 
-const KEY = 'cc.physician.session';
-
-let current: PhysicianSession | null = load();
-
-function load(): PhysicianSession | null {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as PhysicianSession) : null;
-  } catch {
-    return null;
-  }
-}
+// In-memory only. Never restored at startup → a reload shows the login screen again.
+let current: PhysicianSession | null = null;
 
 export function getPhysicianSession(): PhysicianSession | null {
   return current;
@@ -32,20 +24,10 @@ export function getPhysicianSession(): PhysicianSession | null {
 
 export function setPhysicianSession(session: PhysicianSession): void {
   current = session;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(session));
-  } catch {
-    /* storage unavailable; keep in memory only */
-  }
 }
 
 export function clearPhysicianSession(): void {
   current = null;
-  try {
-    localStorage.removeItem(KEY);
-  } catch {
-    /* ignore */
-  }
 }
 
 /** The id sent as X-Physician-Id; null when signed out. */
