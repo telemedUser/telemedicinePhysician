@@ -401,6 +401,12 @@ body {
 .wl-actioncell {
   text-align: right;
   white-space: nowrap;
+  /* Stack the primary action and the secondary "Notify delay" link, right-aligned so the
+     buttons line up on a common right edge across every row. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
 }
 .wl-actioncell .wl-secondary-link {
   display: block;
@@ -467,6 +473,8 @@ body {
     text-align: left;
     margin-top: 8px;
     display: flex;
+    flex-direction: row;
+    align-items: center;
     gap: 8px;
     flex-wrap: wrap;
   }
