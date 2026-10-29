@@ -11,6 +11,7 @@ import type {
 import { BpButton, Field, Icon } from '../ui/primitives';
 import { SearchDropdown } from './careplan/SearchDropdown';
 import { CarePlanStepper } from './careplan/CarePlanStepper';
+import { useDictation } from '../components/useDictation';
 
 const EMPTY: CarePlan = {
   appointmentId: '',
@@ -249,12 +250,14 @@ export function CarePlanPage() {
 
       <h1 className="cp-title">Review</h1>
 
-      {/* ============ Clinical note (warm AI-draft card) ============ */}
-      <div className="cp-note-card" id="cp-sec-note">
+      {/* ============ Clinical note (warm AI-draft card → white once approved) ============ */}
+      <div className={noteApproved ? 'cp-note-card is-approved' : 'cp-note-card'} id="cp-sec-note">
         <div className="cp-head">
           <span className="cp-head-icon"><Icon name="clinical_notes" size={18} /></span>
           <span className="cp-head-title">Clinical note</span>
-          <span className="cp-ai-badge"><Icon name="auto_awesome" size={13} />AI draft · review</span>
+          {!noteApproved && (
+            <span className="cp-ai-badge"><Icon name="auto_awesome" size={13} />AI draft · review</span>
+          )}
           <span style={{ flex: 1 }} />
           <button type="button" className="cp-link" onClick={() => setNoteEditing('history')}>Write manually</button>
           <button
@@ -597,12 +600,14 @@ export function CarePlanPage() {
         </div>
       </div>
 
-      {/* ============ Summary (warm AI-draft card) ============ */}
-      <div className="cp-note-card" id="cp-sec-summary">
+      {/* ============ Summary (warm AI-draft card → white once approved) ============ */}
+      <div className={summaryApproved ? 'cp-note-card is-approved' : 'cp-note-card'} id="cp-sec-summary">
         <div className="cp-head">
           <span className="cp-head-icon"><Icon name="summarize" size={18} /></span>
           <span className="cp-head-title">Summary for the patient</span>
-          <span className="cp-ai-badge"><Icon name="auto_awesome" size={13} />AI draft · review</span>
+          {!summaryApproved && (
+            <span className="cp-ai-badge"><Icon name="auto_awesome" size={13} />AI draft · review</span>
+          )}
           <span style={{ flex: 1 }} />
           <button type="button" className="cp-link" onClick={() => setSummaryEditing('text')}>Write manually</button>
           <button
@@ -671,6 +676,14 @@ function EditRow({
   onDone: () => void;
   emptyText: string;
 }) {
+  // Append dictated speech to the current value (space-separated), so the mic adds to what's typed.
+  const appendDictation = (text: string) => {
+    const base = value ?? '';
+    const joiner = base && !/\s$/.test(base) ? ' ' : '';
+    onChange(base + joiner + text);
+  };
+  const dictation = useDictation(appendDictation);
+
   return (
     <div className="cp-row">
       <span className="cp-row-label">{label}</span>
@@ -688,8 +701,20 @@ function EditRow({
           {value && value.trim() ? value : emptyText}
         </span>
       )}
+      {editing && dictation.isSupported && (
+        <button
+          type="button"
+          className={dictation.isListening ? 'cp-mic is-listening' : 'cp-mic'}
+          aria-label={dictation.isListening ? `Stop dictating ${label}` : `Dictate ${label}`}
+          aria-pressed={dictation.isListening}
+          title={dictation.isListening ? 'Stop dictation' : 'Dictate (voice to text)'}
+          onClick={dictation.toggle}
+        >
+          <Icon name={dictation.isListening ? 'mic' : 'mic_none'} size={18} />
+        </button>
+      )}
       {editing ? (
-        <button type="button" className="cp-pencil" aria-label="Done" title="Done" onClick={onDone}><Icon name="check" size={18} color="var(--bp-blue)" /></button>
+        <button type="button" className="cp-pencil" aria-label="Done" title="Done" onClick={() => { dictation.stop(); onDone(); }}><Icon name="check" size={18} color="var(--bp-blue)" /></button>
       ) : (
         <button type="button" className="cp-pencil" aria-label={`Edit ${label}`} title={`Edit ${label}`} onClick={onEdit}><Icon name="edit" size={16} /></button>
       )}
